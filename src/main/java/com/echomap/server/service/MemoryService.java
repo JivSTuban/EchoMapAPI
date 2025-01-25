@@ -3,6 +3,7 @@ package com.echomap.server.service;
 import com.echomap.server.dto.MemoryDto;
 import com.echomap.server.model.Memory;
 import com.echomap.server.model.User;
+import com.echomap.server.model.VisibilityType;
 import com.echomap.server.repository.MemoryRepository;
 import com.echomap.server.repository.UserRepository;
 import com.echomap.server.util.DtoConverter;
@@ -25,8 +26,8 @@ public class MemoryService {
     }
 
     @Transactional
-    public MemoryDto createMemory(MemoryDto memoryDto, String userId) {
-        User user = userRepository.findById(userId)
+    public MemoryDto createMemory(MemoryDto memoryDto) {
+        User user = userRepository.findById(memoryDto.getUserId())
             .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         Memory memory = dtoConverter.toEntity(memoryDto);
@@ -43,8 +44,8 @@ public class MemoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<MemoryDto> getNearbyMemories(double lat, double lng, double radiusInMeters, String userId) {
-        List<Memory> memories = memoryRepository.findNearbyMemories(lat, lng, radiusInMeters, userId);
+    public List<MemoryDto> getNearbyMemories(double lat, double lng, double radius, Long userId) {
+        List<Memory> memories = memoryRepository.findNearbyMemories(lat, lng, radius, userId);
         return memories.stream()
             .map(memory -> {
                 MemoryDto dto = dtoConverter.toDto(memory);
@@ -57,8 +58,8 @@ public class MemoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<MemoryDto> getNearbyPublicMemories(double lat, double lng, double radiusInMeters) {
-        List<Memory> memories = memoryRepository.findNearbyPublicMemories(lat, lng, radiusInMeters);
+    public List<MemoryDto> getNearbyPublicMemories(double lat, double lng, double radius) {
+        List<Memory> memories = memoryRepository.findNearbyPublicMemories(lat, lng, radius);
         return memories.stream()
             .map(memory -> {
                 MemoryDto dto = dtoConverter.toDto(memory);
@@ -70,13 +71,9 @@ public class MemoryService {
     }
 
     @Transactional
-    public MemoryDto updateMemory(String id, MemoryDto memoryDto, String userId) {
+    public MemoryDto updateMemory(String id, MemoryDto memoryDto) {
         Memory memory = memoryRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Memory not found"));
-
-        if (!memory.getUser().getId().equals(userId)) {
-            throw new IllegalStateException("User not authorized to update this memory");
-        }
 
         memory.setVisibility(memoryDto.getVisibility());
         memory.setAudioUrl(memoryDto.getAudioUrl());
@@ -87,13 +84,9 @@ public class MemoryService {
     }
 
     @Transactional
-    public void deleteMemory(String id, String userId) {
+    public void deleteMemory(String id) {
         Memory memory = memoryRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Memory not found"));
-
-        if (!memory.getUser().getId().equals(userId)) {
-            throw new IllegalStateException("User not authorized to delete this memory");
-        }
 
         memoryRepository.delete(memory);
     }

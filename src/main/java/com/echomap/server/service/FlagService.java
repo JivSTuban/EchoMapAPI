@@ -30,7 +30,7 @@ public class FlagService {
     @Transactional
     public FlagDto createFlag(FlagDto flagDto) {
         Memory memory = memoryRepository.findById(flagDto.getMemoryId())
-    .orElseThrow(() -> new EntityNotFoundException("Memory not found"));
+            .orElseThrow(() -> new EntityNotFoundException("Memory not found"));
 
         // Check if memory has reached maximum flags
         long flagCount = flagRepository.countByMemory(memory);
@@ -42,9 +42,9 @@ public class FlagService {
         }
 
         Flag flag = dtoConverter.toEntity(flagDto);
-memory.addFlag(flag);  // This will handle both sides of the relationship
+        memory.addFlag(flag);  // This will handle both sides of the relationship
         Flag savedFlag = flagRepository.save(flag);
-memoryRepository.save(memory);
+        memoryRepository.save(memory);
         return dtoConverter.toDto(savedFlag);
     }
 
@@ -64,5 +64,21 @@ memoryRepository.save(memory);
         Memory memory = memoryRepository.findById(memoryId)
             .orElseThrow(() -> new EntityNotFoundException("Memory not found"));
         return flagRepository.existsByMemory(memory);
+    }
+
+    @Transactional
+    public void resolveFlag(String id) {
+        Flag flag = flagRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Flag not found"));
+        flag.setResolved(true);
+        flagRepository.save(flag);
+    }
+
+    @Transactional
+    public void hideMemory(String id) {
+        Memory memory = memoryRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Memory not found"));
+        memory.setVisibility(VisibilityType.PRIVATE);
+        memoryRepository.save(memory);
     }
 }

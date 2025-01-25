@@ -43,4 +43,18 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/follow")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Void> followUser(@PathVariable Long id) {
+        userService.followUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/unfollow")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Void> unfollowUser(@PathVariable Long id) {
+        userService.unfollowUser(id);
+        return ResponseEntity.noContent().build();
+    }
 }

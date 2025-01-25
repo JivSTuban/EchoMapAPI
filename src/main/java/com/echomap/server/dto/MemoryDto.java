@@ -1,15 +1,20 @@
 package com.echomap.server.dto;
 
+import com.echomap.server.model.MediaType;
 import com.echomap.server.model.VisibilityType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class MemoryDto {
     private String id;
     private String userId;
     private String username;
-    private String audioUrl;
+    private String mediaUrl;
+    private MediaType mediaType;
+    private String description;
+    private List<CommentDto> comments;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -26,6 +31,7 @@ public class MemoryDto {
     private VisibilityType visibility;
 
     private Double distanceInMeters;
+    private String audioUrl;
 
     public String getId() {
         return id;
@@ -51,12 +57,36 @@ public class MemoryDto {
         this.username = username;
     }
 
-    public String getAudioUrl() {
-        return audioUrl;
+    public String getMediaUrl() {
+        return mediaUrl;
     }
 
-    public void setAudioUrl(String audioUrl) {
-        this.audioUrl = audioUrl;
+    public void setMediaUrl(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
+    }
+
+    public MediaType getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(MediaType mediaType) {
+        this.mediaType = mediaType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<CommentDto> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<CommentDto> comments) {
+        this.comments = comments;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -105,5 +135,13 @@ public class MemoryDto {
 
     public void setDistanceInMeters(Double distanceInMeters) {
         this.distanceInMeters = distanceInMeters;
+    }
+
+    public String getAudioUrl() {
+        return audioUrl;
+    }
+
+    public void setAudioUrl(String audioUrl) {
+        this.audioUrl = audioUrl;
     }
 }

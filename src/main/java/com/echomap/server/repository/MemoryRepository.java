@@ -12,26 +12,26 @@ import java.util.List;
 @Repository
 public interface MemoryRepository extends JpaRepository<Memory, String> {
     List<Memory> findByUser(User user);
-    
+
     List<Memory> findByVisibility(VisibilityType visibility);
 
     @Query(value = """
-        SELECT m.* FROM memories m 
+        SELECT m.* FROM memories m
         WHERE ST_Distance_Sphere(m.location, POINT(:lng, :lat)) <= :distance
-        AND (m.visibility = 'PUBLIC' 
-             OR (m.visibility = 'FOLLOWERS' AND m.user_id IN 
+        AND (m.visibility = 'PUBLIC'
+            OR (m.visibility = 'FOLLOWERS' AND m.user_id IN
                 (SELECT followed_id FROM user_followers WHERE follower_id = :userId))
-             OR (m.user_id = :userId))
+            OR (m.user_id = :userId))
         """, nativeQuery = true)
     List<Memory> findNearbyMemories(
         @Param("lat") double lat,
         @Param("lng") double lng,
         @Param("distance") double distance,
-        @Param("userId") String userId
+        @Param("userId") long userId
     );
 
     @Query(value = """
-        SELECT m.* FROM memories m 
+        SELECT m.* FROM memories m
         WHERE ST_Distance_Sphere(m.location, POINT(:lng, :lat)) <= :distance
         AND m.visibility = 'PUBLIC'
         """, nativeQuery = true)

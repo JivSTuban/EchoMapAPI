@@ -21,9 +21,13 @@ public class Flag {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "resolved")
+    private boolean resolved;
+
     public Flag() {
         this.id = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
+        this.resolved = false;
     }
 
     public String getId() {
@@ -56,5 +60,13 @@ public class Flag {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isResolved() {
+        return resolved;
+    }
+
+    public void setResolved(boolean resolved) {
+        this.resolved = resolved;
     }
 }

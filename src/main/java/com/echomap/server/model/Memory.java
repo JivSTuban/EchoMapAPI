@@ -18,8 +18,18 @@ public class Memory {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "audio_url")
-    private String audioUrl;
+    @Column(name = "media_url")
+    private String mediaUrl;
+
+    @Column(name = "media_type")
+    @Enumerated(EnumType.STRING)
+    private MediaType mediaType;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @OneToMany(mappedBy = "memory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comment> comments = new HashSet<>();
 
     @Column(name = "location", nullable = false, columnDefinition = "POINT SRID 4326")
     private Point location;
@@ -36,6 +46,9 @@ public class Memory {
 
     @OneToMany(mappedBy = "memory", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Flag> flags = new HashSet<>();
+
+    @Column(name = "audio_url")
+    private String audioUrl;
 
     public Memory() {
         this.id = UUID.randomUUID().toString();
@@ -70,12 +83,36 @@ public class Memory {
         this.user = user;
     }
 
-    public String getAudioUrl() {
-        return audioUrl;
+    public String getMediaUrl() {
+        return mediaUrl;
     }
 
-    public void setAudioUrl(String audioUrl) {
-        this.audioUrl = audioUrl;
+    public void setMediaUrl(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
+    }
+
+    public MediaType getMediaType() {
+        return mediaType;
+    }
+
+    public void setMediaType(MediaType mediaType) {
+        this.mediaType = mediaType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Set<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(Set<Comment> comments) {
+        this.comments = comments;
     }
 
     public Point getLocation() {
@@ -116,5 +153,13 @@ public class Memory {
 
     public void setFlags(Set<Flag> flags) {
         this.flags = flags;
+    }
+
+    public String getAudioUrl() {
+        return audioUrl;
+    }
+
+    public void setAudioUrl(String audioUrl) {
+        this.audioUrl = audioUrl;
     }
 }

@@ -2,12 +2,13 @@ package com.echomap.server.service;
 
 import com.echomap.server.dto.UserDto;
 import com.echomap.server.exception.ResourceNotFoundException;
+import com.echomap.server.model.Role;
 import com.echomap.server.model.User;
 import com.echomap.server.repository.UserRepository;
 import com.echomap.server.util.DtoConverter;
 import jakarta.persistence.EntityNotFoundException;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -99,5 +100,48 @@ public class UserService implements UserDetailsService {
             throw new EntityNotFoundException("User not found");
         }
         userRepository.deleteById(id);
+    }
+
+    public User registerUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
+    }
+
+    public void followUser(Long id) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User userToFollow = userRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (!currentUser.getFollowing().contains(userToFollow)) {
+            currentUser.getFollowing().add(userToFollow);
+            userToFollow.getFollowers().add(currentUser);
+            userRepository.save(currentUser);
+            userRepository.save(userToFollow);
+        }
+    }
+
+    public void unfollowUser(Long id) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User userToUnfollow = userRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (currentUser.getFollowing().contains(userToUnfollow)) {
+            currentUser.getFollowing().remove(userToUnfollow);
+            userToUnfollow.getFollowers().remove(currentUser);
+            userRepository.save(currentUser);
+            userRepository.save(userToUnfollow);
+        }
+    }
+
+    public User createGuestUser(String username, String password) {
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+
+        User guestUser = new User();
+        guestUser.setUsername(username);
+        guestUser.setPassword(passwordEncoder.encode(password));
+        guestUser.setRole(Role.GUEST); // Assuming you have a GUEST role
+        return userRepository.save(guestUser);
     }
 }

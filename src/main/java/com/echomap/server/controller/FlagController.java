@@ -36,4 +36,18 @@ public class FlagController {
     public ResponseEntity<Boolean> isMemoryFlagged(@PathVariable String memoryId) {
         return ResponseEntity.ok(flagService.isMemoryFlagged(memoryId));
     }
+
+    @PatchMapping("/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> resolveFlag(@PathVariable String id) {
+        flagService.resolveFlag(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/memories/{id}/hide")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> hideMemory(@PathVariable String id) {
+        flagService.hideMemory(id);
+        return ResponseEntity.noContent().build();
+    }
 }
