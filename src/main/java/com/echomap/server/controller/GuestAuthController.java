@@ -1,8 +1,11 @@
 package com.echomap.server.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.echomap.server.dto.AuthRequest;
 import com.echomap.server.dto.AuthResponse;
 import com.echomap.server.model.User;
+import com.echomap.server.repository.UserRepository;
 import com.echomap.server.security.JwtTokenProvider;
 import com.echomap.server.service.UserService;
 import jakarta.validation.Valid;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/guest/auth")
 @CrossOrigin(origins = "*")
 public class GuestAuthController {
+    private static final Logger log = LoggerFactory.getLogger(GuestAuthController.class);
+
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
@@ -44,19 +49,31 @@ public class GuestAuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody AuthRequest registerRequest) {
-        User user = userService.createGuestUser(registerRequest.getUsername(), registerRequest.getPassword());
+    public ResponseEntity<AuthResponse> createAndAuthenticateGuest() {
+        log.info("Starting guest user creation and authentication");
 
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(
-                registerRequest.getUsername(),
-                registerRequest.getPassword()
-            )
-        );
+        // Create guest user with raw password
+        UserService.GuestAuthResult result = userService.createGuestUser();
+        User user = result.getUser();
+        String rawPassword = result.getPassword();
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+        try {
+            // Authenticate with raw password
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    user.getUsername(),
+                    rawPassword
+                )
+            );
 
-        return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+
+            log.info("Guest user authenticated successfully: {}", user.getUsername());
+            return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole(), rawPassword));
+        } catch (Exception e) {
+            log.error("Failed to authenticate guest user: {}", e.getMessage());
+            throw e;
+        }
     }
 }

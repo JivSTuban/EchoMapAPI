@@ -4,13 +4,13 @@ import com.echomap.server.dto.UserDto;
 import com.echomap.server.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
+
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -18,42 +18,43 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('USER') and (authentication.principal.username == @userService.getUserById(#id).username or hasRole('ADMIN'))")
-    public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<UserDto> getUserById(@PathVariable String id) {
+        UserDto userDto = userService.getUserById(id);
+        return ResponseEntity.ok(userDto);
     }
 
     @GetMapping("/username/{username}")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<UserDto> getUserByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getUserByUsername(username));
+        UserDto userDto = userService.getUserByUsername(username);
+        return ResponseEntity.ok(userDto);
+    }
+
+    @PostMapping
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
+        UserDto createdUser = userService.createUser(userDto);
+        return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('USER') and (authentication.principal.username == @userService.getUserById(#id).username or hasRole('ADMIN'))")
-    public ResponseEntity<UserDto> updateUser(
-            @PathVariable Long id,
-            @Valid @RequestBody UserDto userDto) {
-        return ResponseEntity.ok(userService.updateUser(id, userDto));
+    public ResponseEntity<UserDto> updateUser(@PathVariable String id, @Valid @RequestBody UserDto userDto) {
+        UserDto updatedUser = userService.updateUser(id, userDto);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and authentication.principal.username == @userService.getUserById(#id).username)")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/follow")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> followUser(@PathVariable Long id) {
+    public ResponseEntity<Void> followUser(@PathVariable String id) {
         userService.followUser(id);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}/unfollow")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Void> unfollowUser(@PathVariable Long id) {
+    @PostMapping("/{id}/unfollow")
+    public ResponseEntity<Void> unfollowUser(@PathVariable String id) {
         userService.unfollowUser(id);
         return ResponseEntity.noContent().build();
     }

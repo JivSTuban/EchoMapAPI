@@ -22,11 +22,13 @@ public class DtoConverter {
     }
 
     public User toEntity(UserDto dto) {
+        System.out.println("Converting UserDto to User entity");
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setPassword(dto.getPassword());
         user.setRole(dto.getRole());
+        System.out.println("User entity created: " + user);
         return user;
     }
 

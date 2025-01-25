@@ -66,32 +66,33 @@ public class AuthController {
 
         return ResponseEntity.ok(new AuthResponse(jwt, createdUser.getId(), createdUser.getUsername(), createdUser.getEmail(), ((User) authentication.getPrincipal()).getRole()));
     }
-@GetMapping("/me")
-public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-    logger.info("Received request to get current user");
-    try {
-        if (authentication == null) {
-            logger.warn("No authentication found");
-            return ResponseEntity.status(401).body("No authentication found");
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        logger.info("Received request to get current user");
+        try {
+            if (authentication == null) {
+                logger.warn("No authentication found");
+                return ResponseEntity.status(401).body("No authentication found");
+            }
+
+            String username = authentication.getName();
+            UserDto userDto = userService.getUserByUsername(username);
+
+            logger.info("Authenticated user: {}", username);
+            String currentToken = tokenProvider.generateToken(authentication);
+            logger.info("Generated fresh token for user: {}", username);
+
+            return ResponseEntity.ok(new AuthResponse(
+                currentToken,
+                userDto.getId(),
+                userDto.getUsername(),
+                userDto.getEmail(),
+                userDto.getRole()
+            ));
+        } catch (Exception e) {
+            logger.error("Error getting current user", e);
+            return ResponseEntity.status(401).body("Authentication failed: " + e.getMessage());
         }
-
-        String username = authentication.getName();
-        UserDto userDto = userService.getUserByUsername(username);
-
-        logger.info("Authenticated user: {}", username);
-        String currentToken = tokenProvider.generateToken(authentication);
-        logger.info("Generated fresh token for user: {}", username);
-
-        return ResponseEntity.ok(new AuthResponse(
-            currentToken,
-            userDto.getId(),
-            userDto.getUsername(),
-            userDto.getEmail(),
-            userDto.getRole()
-        ));
-    } catch (Exception e) {
-        logger.error("Error getting current user", e);
-        return ResponseEntity.status(401).body("Authentication failed: " + e.getMessage());
     }
-}
 }

@@ -33,6 +33,9 @@ public class User implements UserDetails {
     @Column(name = "password", length = 255)
     private String password;
 
+    @Transient // This field won't be persisted
+    private String rawPassword;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Role role = Role.USER;
@@ -71,7 +74,8 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        // Add ROLE_ prefix only for Spring Security, not for database storage
+        return List.of(new SimpleGrantedAuthority(role.name().startsWith("ROLE_") ? role.name() : "ROLE_" + role.name()));
     }
 
     @Override
@@ -166,5 +170,13 @@ public class User implements UserDetails {
 
     public void setFollowing(Set<User> following) {
         this.following = following;
+    }
+
+    public String getRawPassword() {
+        return rawPassword;
+    }
+
+    public void setRawPassword(String rawPassword) {
+        this.rawPassword = rawPassword;
     }
 }

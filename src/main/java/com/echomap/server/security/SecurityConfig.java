@@ -1,5 +1,7 @@
 package com.echomap.server.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,11 +25,24 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     private final JwtTokenProvider tokenProvider;
 
     public SecurityConfig(JwtTokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
+    }
+
+    private class DebuggingPasswordEncoder extends BCryptPasswordEncoder {
+        @Override
+        public boolean matches(CharSequence rawPassword, String encodedPassword) {
+            boolean matches = super.matches(rawPassword, encodedPassword);
+            log.debug("Password comparison - Raw length: {}, Encoded length: {}, Matches: {}",
+                rawPassword.length(),
+                encodedPassword.length(),
+                matches);
+            return matches;
+        }
     }
 
     @Bean
@@ -42,6 +58,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/guest/auth/**").permitAll()
                 .requestMatchers("/api/users/register").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
@@ -57,10 +74,11 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
-@Bean
-public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-}
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        log.debug("Creating debugging password encoder");
+        return new DebuggingPasswordEncoder();
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

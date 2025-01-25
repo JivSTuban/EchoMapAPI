@@ -48,7 +48,7 @@ The application will be available at `http://localhost:8080`
 - `POST /api/auth/login` - Login user
 - `POST /api/auth/register` - Register new user
 - `POST /api/guest/auth/login` - Guest login
-- `POST /api/guest/auth/register` - Guest register
+- `POST /api/guest/auth/register` - Auto-generated guest account registration and login
 
 #### Memory Management
 
@@ -238,11 +238,6 @@ Response:
 ### Guest Register
 ```json
 POST /api/guest/auth/register
-Request:
-{
-    "username": "guest_user",
-    "password": "guest_password"
-}
 
 Response:
 {

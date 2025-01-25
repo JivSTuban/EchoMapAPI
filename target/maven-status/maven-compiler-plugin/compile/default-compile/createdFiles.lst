@@ -3,6 +3,7 @@ com/echomap/server/controller/UserController.class
 com/echomap/server/util/DtoConverter.class
 com/echomap/server/repository/MemoryRepository.class
 com/echomap/server/controller/MemoryController.class
+com/echomap/server/service/GuestCredentials.class
 com/echomap/server/controller/GuestAuthController.class
 com/echomap/server/dto/MemoryDto.class
 com/echomap/server/exception/ResourceNotFoundException.class
@@ -35,3 +36,5 @@ com/echomap/server/security/SecurityConfig.class
 com/echomap/server/model/MediaType.class
 com/echomap/server/repository/FlagRepository.class
 com/echomap/server/model/Flag.class
+com/echomap/server/security/SecurityConfig$DebuggingPasswordEncoder.class
+com/echomap/server/service/UserService$GuestAuthResult.class
