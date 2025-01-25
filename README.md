@@ -35,7 +35,8 @@ The application will be available at `http://localhost:8080`
 
 ## API Endpoints
 
-### Public Endpoints
+<details>
+<summary>Public Endpoints</summary>
 
 #### User Management
 
@@ -53,7 +54,10 @@ The application will be available at `http://localhost:8080`
 
 - `GET /api/memories/nearby/public` - Get nearby public memories
 
-### Protected Endpoints
+</details>
+
+<details>
+<summary>Protected Endpoints</summary>
 
 #### User Management
 
@@ -88,6 +92,8 @@ The application will be available at `http://localhost:8080`
 - `GET /api/flags/memory/{memoryId}/status` - Check if memory is flagged
 - `PATCH /api/flags/{id}/resolve` - Resolve a flag
 - `DELETE /api/flags/memories/{id}/hide` - Hide a memory
+
+</details>
 
 ## Request Examples
 
