@@ -1,17 +1,12 @@
 package com.echomap.server.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.echomap.server.dto.UserDto;
-import com.echomap.server.exception.ResourceNotFoundException;
 import com.echomap.server.model.Role;
 import com.echomap.server.model.User;
 import com.echomap.server.repository.UserRepository;
-import com.echomap.server.util.DtoConverter;
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -19,238 +14,187 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
 @Service
 public class UserService implements UserDetailsService {
-    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
-    private final DtoConverter dtoConverter;
     private final PasswordEncoder passwordEncoder;
 
-    // Cache for guest passwords (encoded)
-    private static final Map<String, String> guestPasswordCache = new ConcurrentHashMap<>();
-    private static final Map<String, GuestCredentials> guestCredentialsCache = new ConcurrentHashMap<>();
-
-    @Autowired
-    public UserService(UserRepository userRepository, DtoConverter dtoConverter, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.dtoConverter = dtoConverter;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-
-        // If this is a guest user and we have cached credentials
-        GuestCredentials credentials = guestCredentialsCache.get(username);
-        log.debug("Loading user details - Username: {}, Is Guest: {}", username, user.getRole() == Role.GUEST);
-        log.debug("Credentials state - Cached Present: {}", credentials != null);
-
-        if (user.getRole() == Role.GUEST && credentials != null) {
-            log.debug("Using cached raw password for guest authentication");
-            user.setPassword(credentials.rawPassword);
-        }
-
-        return user;
-    }
-
-    // Guest password management
-    public void setGuestPassword(String username, String rawPassword) {
-        String encodedPassword = passwordEncoder.encode(rawPassword);
-        guestPasswordCache.put(username, rawPassword);
-        log.debug("Stored guest password for user: {}", username);
-    }
-
-    public String getGuestPassword(String username) {
-        String password = guestPasswordCache.get(username);
-        log.debug("Retrieved guest password for user: {}, exists: {}", username, password != null);
-        return password;
-    }
-
-    public void clearGuestPassword(String username) {
-        guestPasswordCache.remove(username);
-        log.debug("Cleared guest password for user: {}", username);
+        logger.info("Loading user by username: {}", username);
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
     @Transactional
     public UserDto createUser(UserDto userDto) {
-        if (userRepository.existsByUsername(userDto.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
-        }
-        if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-
-        System.out.println("Converting UserDto to User entity");
-        User user = dtoConverter.toEntity(userDto);
-        if (user == null) {
-            throw new IllegalArgumentException("Failed to convert UserDto to User entity");
+        logger.info("Creating user with username: {}", userDto.getUsername());
+        if (userRepository.findByUsername(userDto.getUsername()).isPresent()) {
+            logger.error("Username already exists: {}", userDto.getUsername());
+            throw new RuntimeException("Username already exists");
         }
 
-        // Encode password before saving
+        User user = new User();
+        user.setId(UUID.randomUUID().toString());
+        user.setUsername(userDto.getUsername());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setEmail(userDto.getEmail());
+        user.setRole(Role.USER);
+
         User savedUser = userRepository.save(user);
-        return dtoConverter.toDto(savedUser);
+        logger.info("User created successfully: {}", savedUser.getUsername());
+        return convertToDto(savedUser);
     }
 
-    @Transactional(readOnly = true)
-    public UserDto getUserById(String id) {
-        return userRepository.findById(id)
-            .map(user -> dtoConverter.toDto(user))
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + id));
+    @Transactional
+    public UserDto findOrCreateSocialUser(UserDto userDto) {
+        logger.info("Finding or creating social user with email: {}", userDto.getEmail());
+        Optional<User> existingUser = userRepository.findByEmail(userDto.getEmail());
+
+        if (existingUser.isPresent()) {
+            logger.info("Existing user found: {}", existingUser.get().getUsername());
+            return convertToDto(existingUser.get());
+        }
+
+        User user = new User();
+        user.setId(UUID.randomUUID().toString());
+        user.setUsername(userDto.getUsername());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        user.setEmail(userDto.getEmail());
+        user.setRole(Role.USER);
+        user.setSocialLogin(true);
+
+        User savedUser = userRepository.save(user);
+        logger.info("Social user created successfully: {}", savedUser.getUsername());
+        return convertToDto(savedUser);
     }
 
-    @Transactional(readOnly = true)
+    public List<SimpleGrantedAuthority> getUserAuthorities(Role role) {
+        logger.info("Getting authorities for role: {}", role);
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
     public UserDto getUserByUsername(String username) {
+        logger.info("Getting user by username: {}", username);
         User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        return dtoConverter.toDto(user);
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return convertToDto(user);
+    }
+
+    public UserDto getUserById(String id) {
+        logger.info("Getting user by ID: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+        return convertToDto(user);
     }
 
     @Transactional
     public UserDto updateUser(String id, UserDto userDto) {
+        logger.info("Updating user with ID: {}", id);
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found: " + id));
 
-        // Check if new username is already taken by another user
-        if (!user.getUsername().equals(userDto.getUsername()) &&
-            userRepository.existsByUsername(userDto.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+        if (userDto.getUsername() != null) {
+            user.setUsername(userDto.getUsername());
         }
-
-        // Check if new email is already taken by another user
-        if (!user.getEmail().equals(userDto.getEmail()) &&
-            userRepository.existsByEmail(userDto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+        if (userDto.getEmail() != null) {
+            user.setEmail(userDto.getEmail());
         }
-
-        user.setUsername(userDto.getUsername());
-        user.setEmail(userDto.getEmail());
-
-        // Update password if provided
-        if (userDto.getPassword() != null && !userDto.getPassword().isEmpty()) {
+        if (userDto.getPassword() != null) {
             user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         }
 
-        User updatedUser = userRepository.save(user);
-        return dtoConverter.toDto(updatedUser);
+        User savedUser = userRepository.save(user);
+        logger.info("User updated successfully: {}", savedUser.getUsername());
+        return convertToDto(savedUser);
     }
 
     @Transactional
     public void deleteUser(String id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found");
-        }
+        logger.info("Deleting user with ID: {}", id);
         userRepository.deleteById(id);
     }
 
-    public User registerUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    @Transactional
+    public void followUser(String followerId, String followingId) {
+        logger.info("Following user with ID: {} by user with ID: {}", followingId, followerId);
+        User follower = userRepository.findById(followerId)
+                .orElseThrow(() -> new RuntimeException("Follower not found: " + followerId));
+        User following = userRepository.findById(followingId)
+                .orElseThrow(() -> new RuntimeException("User to follow not found: " + followingId));
+
+        following.getFollowers().add(follower);
+        userRepository.save(following);
     }
 
-    public void followUser(String id) {
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User userToFollow = userRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    @Transactional
+    public void unfollowUser(String followerId, String followingId) {
+        logger.info("Unfollowing user with ID: {} by user with ID: {}", followingId, followerId);
+        User follower = userRepository.findById(followerId)
+                .orElseThrow(() -> new RuntimeException("Follower not found: " + followerId));
+        User following = userRepository.findById(followingId)
+                .orElseThrow(() -> new RuntimeException("User to unfollow not found: " + followingId));
 
-        if (!currentUser.getFollowing().contains(userToFollow)) {
-            currentUser.getFollowing().add(userToFollow);
-            userToFollow.getFollowers().add(currentUser);
-            userRepository.save(currentUser);
-            userRepository.save(userToFollow);
-        }
+        following.getFollowers().remove(follower);
+        userRepository.save(following);
     }
 
-    public void unfollowUser(String id) {
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User userToUnfollow = userRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("User not found"));
-
-        if (currentUser.getFollowing().contains(userToUnfollow)) {
-            currentUser.getFollowing().remove(userToUnfollow);
-            userToUnfollow.getFollowers().remove(currentUser);
-            userRepository.save(currentUser);
-            userRepository.save(userToUnfollow);
-        }
+    private UserDto convertToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        return dto;
     }
 
     public static class GuestAuthResult {
+        private final String token;
         private final User user;
         private final String password;
 
-        public GuestAuthResult(User user, String password) {
+        public GuestAuthResult(String token, User user, String password) {
+            this.token = token;
             this.user = user;
             this.password = password;
         }
 
-        public User getUser() { return user; }
-        public String getPassword() { return password; }
+        public String getToken() {
+            return token;
+        }
+
+        public User getUser() {
+            return user;
+        }
+
+        public String getPassword() {
+            return password;
+        }
     }
 
     @Transactional
     public GuestAuthResult createGuestUser() {
-        String username = generateUniqueUsername();
-        String rawPassword = generateRandomPassword();
-        String email = generateUniqueEmail();
-
-        log.info("Creating guest user with username: {} and email: {}", username, email);
-
-        User user = new User();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(rawPassword));
-        user.setRole(Role.GUEST);
-
-        User savedUser = userRepository.save(user);
-        log.info("Guest user saved successfully");
-
-        return new GuestAuthResult(savedUser, rawPassword);
-    }
-
-    private String generateUniqueEmail() {
-        String email;
-        do {
-            email = "guest_" + UUID.randomUUID().toString().substring(0, 8) + "@navigram.com";
-        } while (userRepository.existsByEmail(email));
-        return email;
-    }
-
-    private String generateUniqueUsername() {
-        String username;
-        do {
-            username = "guest_" + UUID.randomUUID().toString().substring(0, 8);
-        } while (userRepository.existsByUsername(username));
-        return username;
-    }
-
-    private String generateRandomPassword() {
-        return UUID.randomUUID().toString().substring(0, 12);
-    }
-
-    public User createGuestUser(String username, String password) {
-        if (userRepository.existsByUsername(username)) {
-            throw new IllegalArgumentException("Username already exists");
-        }
+        String guestUsername = "guest_" + UUID.randomUUID().toString().substring(0, 8);
+        String guestPassword = UUID.randomUUID().toString();
 
         User guestUser = new User();
-        guestUser.setUsername(username);
-        guestUser.setPassword(passwordEncoder.encode(password));
-        guestUser.setRole(Role.GUEST); // Assuming you have a GUEST role
-        return userRepository.save(guestUser);
-    }
-}
+        guestUser.setId(UUID.randomUUID().toString());
+        guestUser.setUsername(guestUsername);
+        guestUser.setPassword(passwordEncoder.encode(guestPassword));
+        guestUser.setRole(Role.GUEST);
 
-class GuestCredentials {
-    String rawPassword;
-
-    public GuestCredentials(String rawPassword) {
-        this.rawPassword = rawPassword;
+        User savedUser = userRepository.save(guestUser);
+        logger.info("Guest user created successfully: {}", savedUser.getUsername());
+        return new GuestAuthResult(UUID.randomUUID().toString(), savedUser, guestPassword);
     }
 }

@@ -2,6 +2,7 @@ package com.echomap.server.controller;
 
 import com.echomap.server.dto.AuthRequest;
 import com.echomap.server.dto.AuthResponse;
+import com.echomap.server.dto.Auth0TokenExchangeRequest;
 import com.echomap.server.dto.UserDto;
 import com.echomap.server.model.User;
 import com.echomap.server.security.JwtTokenProvider;
@@ -47,6 +48,44 @@ public class AuthController {
         User user = (User) authentication.getPrincipal();
 
         return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole()));
+    }
+
+    @PostMapping("/auth0/exchange")
+    public ResponseEntity<AuthResponse> exchangeAuth0Token(@Valid @RequestBody Auth0TokenExchangeRequest exchangeRequest) {
+        logger.info("Received Auth0 token exchange request for email: {}", exchangeRequest.getEmail());
+        logger.debug("Auth0 token exchange request details: {}", exchangeRequest);
+
+        try {
+            logger.debug("Creating or updating user from Auth0 information");
+            // Create or update user from Auth0 information
+            UserDto userDto = new UserDto();
+            userDto.setEmail(exchangeRequest.getEmail());
+            userDto.setUsername(exchangeRequest.getNickname() != null ?
+                              exchangeRequest.getNickname() :
+                              exchangeRequest.getEmail());
+            userDto.setPassword(tokenProvider.generateRandomPassword());
+
+            // Try to find existing user or create new one
+            UserDto user = userService.findOrCreateSocialUser(userDto);
+            logger.debug("User created or retrieved: {}", user);
+
+            // Create authentication token
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getUsername(),
+                null, // No password needed for social login
+                userService.getUserAuthorities(user.getRole())
+            );
+            logger.debug("Authentication token created for user: {}", user.getUsername());
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+            logger.debug("JWT token generated for user: {}", user.getUsername());
+
+            return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole()));
+        } catch (Exception e) {
+            logger.error("Error during Auth0 token exchange", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PostMapping("/register")

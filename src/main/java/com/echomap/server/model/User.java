@@ -1,112 +1,46 @@
 package com.echomap.server.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 public class User implements UserDetails {
     @Id
-    @Column(name = "id", columnDefinition = "VARCHAR(36)")
     private String id;
 
-    @NotBlank
-    @Column(unique = true, length = 50)
+    @Column(unique = true, nullable = false)
     private String username;
 
-    @Email
-    @NotBlank
-    @Column(unique = true, length = 100)
-    private String email;
-
-    @NotBlank
-    @Column(name = "password", length = 255)
+    @Column(nullable = false)
     private String password;
 
-    @Transient // This field won't be persisted
-    private String rawPassword;
+    @Column(unique = true)
+    private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role")
-    private Role role = Role.USER;
+    private Role role;
 
-    @Column(name = "account_non_expired")
-    private boolean accountNonExpired = true;
-
-    @Column(name = "account_non_locked")
-    private boolean accountNonLocked = true;
-
-    @Column(name = "credentials_non_expired")
-    private boolean credentialsNonExpired = true;
-
-    @Column(name = "enabled")
-    private boolean enabled = true;
+    @Column(name = "is_social_login")
+    private boolean socialLogin = false;
 
     @ManyToMany
     @JoinTable(
         name = "user_followers",
-        joinColumns = @JoinColumn(name = "user_id"),
+        joinColumns = @JoinColumn(name = "following_id"),
         inverseJoinColumns = @JoinColumn(name = "follower_id")
     )
     private Set<User> followers = new HashSet<>();
 
     @ManyToMany(mappedBy = "followers")
     private Set<User> following = new HashSet<>();
-
-    public User() {
-        this.id = UUID.randomUUID().toString();
-    }
-
-    public User(Long id, String username) {
-        this.id = id.toString();
-        this.username = username;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Add ROLE_ prefix only for Spring Security, not for database storage
-        return List.of(new SimpleGrantedAuthority(role.name().startsWith("ROLE_") ? role.name() : "ROLE_" + role.name()));
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return accountNonExpired;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return accountNonLocked;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return credentialsNonExpired;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public String getUsername() {
-        return username;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
-    }
 
     public String getId() {
         return id;
@@ -116,8 +50,22 @@ public class User implements UserDetails {
         this.id = id;
     }
 
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getEmail() {
@@ -128,10 +76,6 @@ public class User implements UserDetails {
         this.email = email;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public Role getRole() {
         return role;
     }
@@ -140,20 +84,12 @@ public class User implements UserDetails {
         this.role = role;
     }
 
-    public void setAccountNonExpired(boolean accountNonExpired) {
-        this.accountNonExpired = accountNonExpired;
+    public boolean isSocialLogin() {
+        return socialLogin;
     }
 
-    public void setAccountNonLocked(boolean accountNonLocked) {
-        this.accountNonLocked = accountNonLocked;
-    }
-
-    public void setCredentialsNonExpired(boolean credentialsNonExpired) {
-        this.credentialsNonExpired = credentialsNonExpired;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+    public void setSocialLogin(boolean socialLogin) {
+        this.socialLogin = socialLogin;
     }
 
     public Set<User> getFollowers() {
@@ -172,11 +108,28 @@ public class User implements UserDetails {
         this.following = following;
     }
 
-    public String getRawPassword() {
-        return rawPassword;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
-    public void setRawPassword(String rawPassword) {
-        this.rawPassword = rawPassword;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
