@@ -21,6 +21,14 @@ public class JwtTokenProvider {
     @Value("${app.jwtExpirationInMs}")
     private int jwtExpirationInMs;
 
+    private byte[] getSigningKey() {
+        try {
+            return Base64.getEncoder().encode(jwtSecret.getBytes());
+        } catch (Exception e) {
+            throw new IllegalStateException("Error creating JWT signing key", e);
+        }
+    }
+
     public String generateToken(Authentication authentication) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
@@ -29,13 +37,13 @@ public class JwtTokenProvider {
                 .setSubject(authentication.getName())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .signWith(SignatureAlgorithm.HS512, getSigningKey())
                 .compact();
     }
 
     public String getUsernameFromJWT(String token) {
         Claims claims = Jwts.parser()
-                .setSigningKey(jwtSecret)
+                .setSigningKey(getSigningKey())
                 .parseClaimsJws(token)
                 .getBody();
 
@@ -44,7 +52,7 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken);
+            Jwts.parser().setSigningKey(getSigningKey()).parseClaimsJws(authToken);
             return true;
         } catch (SignatureException ex) {
             logger.error("Invalid JWT signature");

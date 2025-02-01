@@ -184,13 +184,16 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public GuestAuthResult createGuestUser() {
-        String guestUsername = "guest_" + UUID.randomUUID().toString().substring(0, 8);
+        String guestId = UUID.randomUUID().toString().substring(0, 8);
+        String guestUsername = "guest_" + guestId;
         String guestPassword = UUID.randomUUID().toString();
+        String guestEmail = guestUsername + "@temporary.echomap.com";
 
         User guestUser = new User();
         guestUser.setId(UUID.randomUUID().toString());
         guestUser.setUsername(guestUsername);
         guestUser.setPassword(passwordEncoder.encode(guestPassword));
+        guestUser.setEmail(guestEmail);
         guestUser.setRole(Role.GUEST);
 
         User savedUser = userRepository.save(guestUser);

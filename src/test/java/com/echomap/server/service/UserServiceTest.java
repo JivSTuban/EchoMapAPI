@@ -64,11 +64,17 @@ class UserServiceTest {
     @Test
     void whenCreateGuestUser_thenReturnGuestAuthResult() {
         // Arrange
-        User savedUser = new User();
-        savedUser.setId("guest-1");
-        savedUser.setRole(Role.GUEST);
         when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User savedUser = invocation.getArgument(0);
+            // Ensure the saved user retains the properties set in createGuestUser
+            assertNotNull(savedUser.getUsername());
+            assertTrue(savedUser.getUsername().startsWith("guest_"));
+            assertNotNull(savedUser.getEmail());
+            assertTrue(savedUser.getEmail().endsWith("@temporary.echomap.com"));
+            assertEquals(Role.GUEST, savedUser.getRole());
+            return savedUser;
+        });
 
         // Act
         UserService.GuestAuthResult result = userService.createGuestUser();
