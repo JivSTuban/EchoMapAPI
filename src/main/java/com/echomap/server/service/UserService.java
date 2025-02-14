@@ -1,6 +1,7 @@
 package com.echomap.server.service;
 
 import com.echomap.server.dto.UserDto;
+import com.echomap.server.dto.GuestAuthResult;
 import com.echomap.server.model.Role;
 import com.echomap.server.model.User;
 import com.echomap.server.repository.UserRepository;
@@ -50,6 +51,11 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setEmail(userDto.getEmail());
         user.setRole(Role.USER);
+        
+        if (userDto.getPhoneNumber() != null && !userDto.getPhoneNumber().isEmpty()) {
+            user.setPhoneNumber(userDto.getPhoneNumber());
+            user.setPhoneVerified(false);
+        }
 
         User savedUser = userRepository.save(user);
         logger.info("User created successfully: {}", savedUser.getUsername());
@@ -99,27 +105,6 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public UserDto updateUser(String id, UserDto userDto) {
-        logger.info("Updating user with ID: {}", id);
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found: " + id));
-
-        if (userDto.getUsername() != null) {
-            user.setUsername(userDto.getUsername());
-        }
-        if (userDto.getEmail() != null) {
-            user.setEmail(userDto.getEmail());
-        }
-        if (userDto.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-        }
-
-        User savedUser = userRepository.save(user);
-        logger.info("User updated successfully: {}", savedUser.getUsername());
-        return convertToDto(savedUser);
-    }
-
-    @Transactional
     public void deleteUser(String id) {
         logger.info("Deleting user with ID: {}", id);
         userRepository.deleteById(id);
@@ -149,39 +134,6 @@ public class UserService implements UserDetailsService {
         userRepository.save(following);
     }
 
-    private UserDto convertToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
-        return dto;
-    }
-
-    public static class GuestAuthResult {
-        private final String token;
-        private final User user;
-        private final String password;
-
-        public GuestAuthResult(String token, User user, String password) {
-            this.token = token;
-            this.user = user;
-            this.password = password;
-        }
-
-        public String getToken() {
-            return token;
-        }
-
-        public User getUser() {
-            return user;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-    }
-
     @Transactional
     public GuestAuthResult createGuestUser() {
         String guestId = UUID.randomUUID().toString().substring(0, 8);
@@ -199,5 +151,47 @@ public class UserService implements UserDetailsService {
         User savedUser = userRepository.save(guestUser);
         logger.info("Guest user created successfully: {}", savedUser.getUsername());
         return new GuestAuthResult(UUID.randomUUID().toString(), savedUser, guestPassword);
+    }
+
+    @Transactional
+    public UserDto updateUser(String id, UserDto userDto) {
+        logger.info("Updating user with ID: {}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found: " + id));
+
+        if (userDto.getUsername() != null) {
+            user.setUsername(userDto.getUsername());
+        }
+        if (userDto.getEmail() != null) {
+            user.setEmail(userDto.getEmail());
+        }
+        if (userDto.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        }
+
+        User savedUser = userRepository.save(user);
+        logger.info("User updated successfully: {}", savedUser.getUsername());
+        return convertToDto(savedUser);
+    }
+
+    @Transactional
+    public boolean updatePhoneVerificationStatus(String userId, boolean verified) {
+        logger.info("Updating phone verification status for user: {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+        user.setPhoneVerified(verified);
+        userRepository.save(user);
+        return true;
+    }
+
+    private UserDto convertToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setPhoneVerified(user.isPhoneVerified());
+        return dto;
     }
 }

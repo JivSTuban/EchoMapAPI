@@ -8,15 +8,10 @@ public class AuthResponse {
     private String username;
     private String email;
     private Role role;
-    private String password;
+    private boolean phoneVerified;
+    private String phoneNumber;
 
-    public AuthResponse(String token, String id, String username, String email, Role role, String password) {
-        this.token = token;
-        this.id = id;
-        this.username = username;
-        this.email = email;
-        this.role = role;
-        this.password = password;
+    public AuthResponse() {
     }
 
     public AuthResponse(String token, String id, String username, String email, Role role) {
@@ -27,7 +22,16 @@ public class AuthResponse {
         this.role = role;
     }
 
-    // Getters and setters
+    public AuthResponse(String token, String id, String username, String email, Role role, String phoneNumber, boolean phoneVerified) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.phoneNumber = phoneNumber;
+        this.phoneVerified = phoneVerified;
+    }
+
     public String getToken() {
         return token;
     }
@@ -68,11 +72,19 @@ public class AuthResponse {
         this.role = role;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public boolean isPhoneVerified() {
+        return phoneVerified;
+    }
+
+    public void setPhoneVerified(boolean phoneVerified) {
+        this.phoneVerified = phoneVerified;
     }
 }

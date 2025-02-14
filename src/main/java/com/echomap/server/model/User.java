@@ -31,6 +31,12 @@ public class User implements UserDetails {
     @Column(name = "is_social_login")
     private boolean socialLogin = false;
 
+    @Column(unique = true)
+    private String phoneNumber;
+
+    @Column(name = "is_phone_verified")
+    private boolean phoneVerified = false;
+
     @ManyToMany
     @JoinTable(
         name = "user_followers",
@@ -90,6 +96,22 @@ public class User implements UserDetails {
 
     public void setSocialLogin(boolean socialLogin) {
         this.socialLogin = socialLogin;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public boolean isPhoneVerified() {
+        return phoneVerified;
+    }
+
+    public void setPhoneVerified(boolean phoneVerified) {
+        this.phoneVerified = phoneVerified;
     }
 
     public Set<User> getFollowers() {

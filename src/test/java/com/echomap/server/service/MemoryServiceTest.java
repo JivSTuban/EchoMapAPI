@@ -1,17 +1,23 @@
 package com.echomap.server.service;
 
+import com.echomap.server.dto.CreateMemoryRequest;
 import com.echomap.server.dto.MemoryDto;
 import com.echomap.server.model.Memory;
 import com.echomap.server.model.User;
+import com.echomap.server.model.MediaType;
 import com.echomap.server.model.VisibilityType;
 import com.echomap.server.repository.MemoryRepository;
 import com.echomap.server.repository.UserRepository;
 import com.echomap.server.util.DtoConverter;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
 
 import java.util.Optional;
 
@@ -31,62 +37,122 @@ class MemoryServiceTest {
     private DtoConverter dtoConverter;
 
     @InjectMocks
-    private MemoryService memoryService;
+    private MemoryServiceImpl memoryService;
+
+    private GeometryFactory geometryFactory;
+    private User testUser;
+    private Memory testMemory;
+    private MemoryDto testMemoryDto;
+    private CreateMemoryRequest testCreateRequest;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+
+        // Setup test user
+        testUser = new User();
+        testUser.setId("userId");
+        testUser.setUsername("testuser");
+
+        // Setup test memory
+        testMemory = new Memory();
+        testMemory.setId("memoryId");
+        testMemory.setUser(testUser);
+        testMemory.setMediaUrl("https://cloudinary.com/test.jpg");
+        testMemory.setCloudinaryPublicId("test/image123");
+        testMemory.setMediaType(MediaType.IMAGE);
+        testMemory.setDescription("Test description");
+        testMemory.setLocation(geometryFactory.createPoint(new Coordinate(1.0, 1.0)));
+        testMemory.setVisibility(VisibilityType.PUBLIC);
+
+        // Setup test DTO
+        testMemoryDto = new MemoryDto();
+        testMemoryDto.setId("memoryId");
+        testMemoryDto.setUserId("userId");
+        testMemoryDto.setMediaUrl("https://cloudinary.com/test.jpg");
+        testMemoryDto.setDescription("Test description");
+        testMemoryDto.setLatitude(1.0);
+        testMemoryDto.setLongitude(1.0);
+        testMemoryDto.setVisibility(VisibilityType.PUBLIC);
+
+        // Setup test create request
+        testCreateRequest = new CreateMemoryRequest();
+        testCreateRequest.setMediaUrl("https://cloudinary.com/test.jpg");
+        testCreateRequest.setCloudinaryPublicId("test/image123");
+        testCreateRequest.setMediaType(MediaType.IMAGE);
+        testCreateRequest.setDescription("Test description");
+        testCreateRequest.setLatitude(1.0);
+        testCreateRequest.setLongitude(1.0);
+        testCreateRequest.setVisibility(VisibilityType.PUBLIC);
     }
 
     @Test
-    void testCreateMemory() {
-        MemoryDto memoryDto = new MemoryDto();
-        memoryDto.setUserId("userId");
-        memoryDto.setAudioUrl("audioUrl");
-        memoryDto.setVisibility(VisibilityType.PUBLIC);
+    void testCreateMemory_Success() {
+        // Arrange
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(memoryRepository.save(any(Memory.class))).thenReturn(testMemory);
+        when(dtoConverter.toDto(any(Memory.class))).thenReturn(testMemoryDto);
 
-        User user = new User();
-        user.setId("userId");
+        // Act
+        MemoryDto result = memoryService.createMemory(testCreateRequest, "testuser");
 
-        Memory memory = new Memory();
-        memory.setUser(user);
-        memory.setAudioUrl("audioUrl");
-        memory.setVisibility(VisibilityType.PUBLIC);
+        // Assert
+        assertNotNull(result);
+        assertEquals("memoryId", result.getId());
+        assertEquals("https://cloudinary.com/test.jpg", result.getMediaUrl());
+        assertEquals("Test description", result.getDescription());
+        assertEquals(VisibilityType.PUBLIC, result.getVisibility());
+        
+        verify(userRepository).findByUsername("testuser");
+        verify(memoryRepository).save(any(Memory.class));
+        verify(dtoConverter).toDto(any(Memory.class));
+    }
 
-        when(userRepository.findById("userId")).thenReturn(Optional.of(user));
-        when(dtoConverter.toEntity(memoryDto)).thenReturn(memory);
-        when(memoryRepository.save(any(Memory.class))).thenReturn(memory);
-        when(dtoConverter.toDto(memory)).thenReturn(memoryDto);
+    @Test
+    void testCreateMemory_UserNotFound() {
+        // Arrange
+        when(userRepository.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
-        MemoryDto createdMemory = memoryService.createMemory(memoryDto);
-
-        assertNotNull(createdMemory);
-        assertEquals("userId", createdMemory.getUserId());
-        assertEquals("audioUrl", createdMemory.getAudioUrl());
-        assertEquals(VisibilityType.PUBLIC, createdMemory.getVisibility());
-        verify(memoryRepository, times(1)).save(any(Memory.class));
+        // Act & Assert
+        assertThrows(EntityNotFoundException.class, () -> 
+            memoryService.createMemory(testCreateRequest, "nonexistent")
+        );
+        
+        verify(userRepository).findByUsername("nonexistent");
+        verify(memoryRepository, never()).save(any(Memory.class));
     }
 
     @Test
     void testGetMemoryById() {
-        Memory memory = new Memory();
-        memory.setId("memoryId");
-        memory.setAudioUrl("audioUrl");
-        memory.setVisibility(VisibilityType.PUBLIC);
+        // Arrange
+        when(memoryRepository.findById("memoryId")).thenReturn(Optional.of(testMemory));
+        when(dtoConverter.toDto(testMemory)).thenReturn(testMemoryDto);
 
-        MemoryDto memoryDto = new MemoryDto();
-        memoryDto.setId("memoryId");
-        memoryDto.setAudioUrl("audioUrl");
-        memoryDto.setVisibility(VisibilityType.PUBLIC);
+        // Act
+        MemoryDto result = memoryService.getMemoryById("memoryId");
 
-        when(memoryRepository.findById("memoryId")).thenReturn(Optional.of(memory));
-        when(dtoConverter.toDto(memory)).thenReturn(memoryDto);
+        // Assert
+        assertNotNull(result);
+        assertEquals("memoryId", result.getId());
+        assertEquals("https://cloudinary.com/test.jpg", result.getMediaUrl());
+        assertEquals("Test description", result.getDescription());
+        assertEquals(VisibilityType.PUBLIC, result.getVisibility());
 
-        MemoryDto retrievedMemory = memoryService.getMemoryById("memoryId");
+        verify(memoryRepository).findById("memoryId");
+        verify(dtoConverter).toDto(testMemory);
+    }
 
-        assertNotNull(retrievedMemory);
-        assertEquals("memoryId", retrievedMemory.getId());
-        assertEquals("audioUrl", retrievedMemory.getAudioUrl());
-        assertEquals(VisibilityType.PUBLIC, retrievedMemory.getVisibility());
+    @Test
+    void testGetMemoryById_NotFound() {
+        // Arrange
+        when(memoryRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(EntityNotFoundException.class, () -> 
+            memoryService.getMemoryById("nonexistent")
+        );
+
+        verify(memoryRepository).findById("nonexistent");
     }
 }

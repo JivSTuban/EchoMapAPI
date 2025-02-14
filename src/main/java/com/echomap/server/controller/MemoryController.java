@@ -1,5 +1,6 @@
 package com.echomap.server.controller;
 
+import com.echomap.server.dto.CreateMemoryRequest;
 import com.echomap.server.dto.MemoryDto;
 import com.echomap.server.service.MemoryService;
 import jakarta.validation.Valid;
@@ -7,7 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/memories")
@@ -21,8 +25,11 @@ public class MemoryController {
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<MemoryDto> createMemory(@Valid @RequestBody MemoryDto memoryDto) {
-        return new ResponseEntity<>(memoryService.createMemory(memoryDto), HttpStatus.CREATED);
+    public ResponseEntity<MemoryDto> createMemory(
+            @Valid @RequestBody CreateMemoryRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        return new ResponseEntity<>(memoryService.createMemory(request, username), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
@@ -59,8 +66,15 @@ public class MemoryController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('USER') and (authentication.principal.username == @memoryService.getMemoryById(#id).user.username or hasRole('ADMIN'))")
-    public ResponseEntity<Void> deleteMemory(@PathVariable String id) {
+    public ResponseEntity<Map<String, String>> deleteMemory(@PathVariable String id) {
         memoryService.deleteMemory(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Memory deleted successfully"));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleException(Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
     }
 }

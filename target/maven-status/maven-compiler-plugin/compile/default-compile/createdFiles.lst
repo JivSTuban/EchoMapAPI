@@ -1,8 +1,11 @@
 com/echomap/server/repository/CommentRepository.class
+com/echomap/server/config/FirebaseConfig.class
 com/echomap/server/controller/UserController.class
 com/echomap/server/util/DtoConverter.class
+com/echomap/server/dto/CreateMemoryRequest.class
 com/echomap/server/repository/MemoryRepository.class
 com/echomap/server/controller/MemoryController.class
+com/echomap/server/service/FirebaseAuthService.class
 com/echomap/server/controller/GuestAuthController.class
 com/echomap/server/dto/MemoryDto.class
 com/echomap/server/exception/ResourceNotFoundException.class
@@ -22,6 +25,7 @@ com/echomap/server/config/PasswordConfig.class
 com/echomap/server/service/CommentService.class
 com/echomap/server/controller/FlagController.class
 com/echomap/server/model/VisibilityType.class
+com/echomap/server/dto/GuestAuthResult.class
 com/echomap/server/service/UserService.class
 com/echomap/server/dto/AuthRequest.class
 com/echomap/server/dto/UserDto.class
@@ -31,10 +35,11 @@ com/echomap/server/security/JwtTokenProvider.class
 com/echomap/server/model/Memory.class
 com/echomap/server/service/MemoryService.class
 com/echomap/server/dto/Auth0TokenExchangeRequest.class
+com/echomap/server/controller/PhoneAuthController.class
 com/echomap/server/exception/GlobalExceptionHandler$ValidationErrorResponse.class
 com/echomap/server/model/User.class
 com/echomap/server/security/SecurityConfig.class
 com/echomap/server/model/MediaType.class
 com/echomap/server/repository/FlagRepository.class
+com/echomap/server/service/MemoryServiceImpl.class
 com/echomap/server/model/Flag.class
-com/echomap/server/service/UserService$GuestAuthResult.class

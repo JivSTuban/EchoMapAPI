@@ -21,6 +21,9 @@ public class Memory {
     @Column(name = "media_url")
     private String mediaUrl;
 
+    @Column(name = "cloudinary_public_id")
+    private String cloudinaryPublicId;
+
     @Column(name = "media_type")
     @Enumerated(EnumType.STRING)
     private MediaType mediaType;
@@ -89,6 +92,14 @@ public class Memory {
 
     public void setMediaUrl(String mediaUrl) {
         this.mediaUrl = mediaUrl;
+    }
+
+    public String getCloudinaryPublicId() {
+        return cloudinaryPublicId;
+    }
+
+    public void setCloudinaryPublicId(String cloudinaryPublicId) {
+        this.cloudinaryPublicId = cloudinaryPublicId;
     }
 
     public MediaType getMediaType() {

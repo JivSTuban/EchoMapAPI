@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS memories (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
-    audio_url VARCHAR(255),
+    media_url VARCHAR(255),
+    media_type ENUM('AUDIO', 'IMAGE', 'VIDEO') NOT NULL,
+    cloudinary_public_id VARCHAR(255),
+    description TEXT,
     location POINT NOT NULL SRID 4326,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     upvote_count INT DEFAULT 0,
@@ -42,3 +45,9 @@ CREATE INDEX idx_memory_visibility ON memories(visibility);
 -- Add index for user lookups by username and email
 CREATE INDEX idx_user_username ON users(username);
 CREATE INDEX idx_user_email ON users(email);
+
+-- Add index for memory media type queries
+CREATE INDEX idx_memory_media_type ON memories(media_type);
+
+-- Add index for cloudinary public id
+CREATE INDEX idx_memory_cloudinary_id ON memories(cloudinary_public_id);

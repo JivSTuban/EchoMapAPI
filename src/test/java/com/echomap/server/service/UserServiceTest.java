@@ -1,5 +1,6 @@
 package com.echomap.server.service;
 
+import com.echomap.server.dto.GuestAuthResult;
 import com.echomap.server.dto.UserDto;
 import com.echomap.server.model.Role;
 import com.echomap.server.model.User;
@@ -9,11 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 class UserServiceTest {
 
@@ -32,114 +34,90 @@ class UserServiceTest {
     }
 
     @Test
-    void whenCreateUser_thenReturnUserDto() {
-        // Arrange
+    void findOrCreateSocialUser_ExistingUser() {
+        User socialUser = new User();
+        socialUser.setUsername("socialUser");
+        socialUser.setEmail("social@example.com");
+        socialUser.setRole(Role.USER);
+
+        UserDto socialUserDto = new UserDto();
+        socialUserDto.setUsername("socialUser");
+        socialUserDto.setEmail("social@example.com");
+
+        when(userRepository.findByEmail("social@example.com")).thenReturn(Optional.of(socialUser));
+
+        UserDto result = userService.findOrCreateSocialUser(socialUserDto);
+
+        assertEquals("socialUser", result.getUsername());
+        assertEquals("social@example.com", result.getEmail());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void findOrCreateSocialUser_NewUser() {
+        UserDto newSocialUserDto = new UserDto();
+        newSocialUserDto.setUsername("newSocialUser");
+        newSocialUserDto.setEmail("new.social@example.com");
+        newSocialUserDto.setPassword("password");
+
+        User savedUser = new User();
+        savedUser.setUsername("newSocialUser");
+        savedUser.setEmail("new.social@example.com");
+        savedUser.setRole(Role.USER);
+        savedUser.setSocialLogin(true);
+
+        when(userRepository.findByEmail("new.social@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
+
+        UserDto result = userService.findOrCreateSocialUser(newSocialUserDto);
+
+        assertEquals("newSocialUser", result.getUsername());
+        assertEquals("new.social@example.com", result.getEmail());
+        assertEquals(Role.USER, result.getRole());
+        verify(userRepository).save(any());
+    }
+
+    @Test
+    void createGuestUser_Success() {
+        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId("guest-id");
+            return user;
+        });
+
+        GuestAuthResult result = userService.createGuestUser();
+
+        assertNotNull(result.getUser());
+        assertNotNull(result.getPassword());
+        assertNotNull(result.getToken());
+        assertTrue(result.getUser().getUsername().startsWith("guest_"));
+        assertEquals(Role.GUEST, result.getUser().getRole());
+        verify(userRepository).save(any());
+    }
+
+    @Test
+    void createUser_Success() {
         UserDto userDto = new UserDto();
         userDto.setUsername("testUser");
         userDto.setEmail("test@example.com");
         userDto.setPassword("password");
 
         User savedUser = new User();
-        savedUser.setId("1");
-        savedUser.setUsername(userDto.getUsername());
-        savedUser.setEmail(userDto.getEmail());
-        savedUser.setPassword("encodedPassword");
+        savedUser.setUsername("testUser");
+        savedUser.setEmail("test@example.com");
         savedUser.setRole(Role.USER);
 
-        when(userRepository.findByUsername(userDto.getUsername())).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(userDto.getPassword())).thenReturn("encodedPassword");
+        when(userRepository.findByUsername("testUser")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
+        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
 
-        // Act
         UserDto result = userService.createUser(userDto);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(userDto.getUsername(), result.getUsername());
-        assertEquals(userDto.getEmail(), result.getEmail());
+        assertEquals("testUser", result.getUsername());
+        assertEquals("test@example.com", result.getEmail());
         assertEquals(Role.USER, result.getRole());
-        verify(userRepository).save(any(User.class));
-    }
-
-    @Test
-    void whenCreateGuestUser_thenReturnGuestAuthResult() {
-        // Arrange
-        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
-            User savedUser = invocation.getArgument(0);
-            // Ensure the saved user retains the properties set in createGuestUser
-            assertNotNull(savedUser.getUsername());
-            assertTrue(savedUser.getUsername().startsWith("guest_"));
-            assertNotNull(savedUser.getEmail());
-            assertTrue(savedUser.getEmail().endsWith("@temporary.echomap.com"));
-            assertEquals(Role.GUEST, savedUser.getRole());
-            return savedUser;
-        });
-
-        // Act
-        UserService.GuestAuthResult result = userService.createGuestUser();
-
-        // Assert
-        assertNotNull(result);
-        assertNotNull(result.getToken());
-        assertNotNull(result.getUser());
-        assertEquals(Role.GUEST, result.getUser().getRole());
-        assertTrue(result.getUser().getUsername().startsWith("guest_"));
-        verify(userRepository).save(any(User.class));
-    }
-
-    @Test
-    void whenFindOrCreateSocialUser_withExistingUser_thenReturnExistingUser() {
-        // Arrange
-        UserDto userDto = new UserDto();
-        userDto.setEmail("social@example.com");
-        userDto.setUsername("socialUser");
-
-        User existingUser = new User();
-        existingUser.setId("1");
-        existingUser.setEmail(userDto.getEmail());
-        existingUser.setUsername(userDto.getUsername());
-        existingUser.setRole(Role.USER);
-        existingUser.setSocialLogin(true);
-
-        when(userRepository.findByEmail(userDto.getEmail())).thenReturn(Optional.of(existingUser));
-
-        // Act
-        UserDto result = userService.findOrCreateSocialUser(userDto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(userDto.getEmail(), result.getEmail());
-        assertEquals(userDto.getUsername(), result.getUsername());
-        verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    void whenFindOrCreateSocialUser_withNewUser_thenCreateAndReturnNewUser() {
-        // Arrange
-        UserDto userDto = new UserDto();
-        userDto.setEmail("new.social@example.com");
-        userDto.setUsername("newSocialUser");
-        userDto.setPassword("password");
-
-        User newUser = new User();
-        newUser.setId("2");
-        newUser.setEmail(userDto.getEmail());
-        newUser.setUsername(userDto.getUsername());
-        newUser.setRole(Role.USER);
-        newUser.setSocialLogin(true);
-
-        when(userRepository.findByEmail(userDto.getEmail())).thenReturn(Optional.empty());
-        when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(newUser);
-
-        // Act
-        UserDto result = userService.findOrCreateSocialUser(userDto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(userDto.getEmail(), result.getEmail());
-        assertEquals(userDto.getUsername(), result.getUsername());
-        verify(userRepository).save(any(User.class));
+        verify(userRepository).save(any());
     }
 }

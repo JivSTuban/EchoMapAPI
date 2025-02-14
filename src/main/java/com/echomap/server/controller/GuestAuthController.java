@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.echomap.server.dto.AuthRequest;
 import com.echomap.server.dto.AuthResponse;
+import com.echomap.server.dto.GuestAuthResult;
 import com.echomap.server.model.User;
 import com.echomap.server.repository.UserRepository;
 import com.echomap.server.security.JwtTokenProvider;
@@ -52,13 +53,11 @@ public class GuestAuthController {
     public ResponseEntity<AuthResponse> createAndAuthenticateGuest() {
         log.info("Starting guest user creation and authentication");
 
-        // Create guest user with raw password
-        UserService.GuestAuthResult result = userService.createGuestUser();
+        GuestAuthResult result = userService.createGuestUser();
         User user = result.getUser();
         String rawPassword = result.getPassword();
 
         try {
-            // Authenticate with raw password
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                     user.getUsername(),
@@ -70,7 +69,8 @@ public class GuestAuthController {
             String jwt = tokenProvider.generateToken(authentication);
 
             log.info("Guest user authenticated successfully: {}", user.getUsername());
-            return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole(), rawPassword));
+            return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole()));
+            
         } catch (Exception e) {
             log.error("Failed to authenticate guest user: {}", e.getMessage());
             throw e;
