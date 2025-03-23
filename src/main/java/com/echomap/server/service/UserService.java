@@ -69,7 +69,13 @@ public class UserService implements UserDetailsService {
 
         if (existingUser.isPresent()) {
             logger.info("Existing user found: {}", existingUser.get().getUsername());
-            return convertToDto(existingUser.get());
+            User user = existingUser.get();
+            if (!user.isSocialLogin()) {
+                user.setSocialLogin(true);
+                userRepository.save(user);
+                logger.info("Updated existing user to socialLogin: {}", user.getUsername());
+            }
+            return convertToDto(user);
         }
 
         User user = new User();
@@ -184,14 +190,45 @@ public class UserService implements UserDetailsService {
         return true;
     }
 
+    @Transactional
+    public User createSocialUser(String username, String email, String name, String profilePicture, String provider) {
+        logger.info("Creating social user with email: {}, provider: {}", email, provider);
+        
+        User user = new User();
+        user.setId(UUID.randomUUID().toString());
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setName(name != null ? name : username);
+        user.setProfilePicture(profilePicture);
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setRole(Role.USER);
+        user.setSocialLogin(true);
+        user.setSocialProvider(provider);
+        
+        User savedUser = userRepository.save(user);
+        logger.info("Social user created successfully: {}", savedUser.getUsername());
+        return savedUser;
+    }
+
+    public Optional<User> findByEmail(String email) {
+        logger.info("Finding user by email: {}", email);
+        return userRepository.findByEmail(email);
+    }
+
+    public boolean existsByUsername(String username) {
+        logger.info("Checking if username exists: {}", username);
+        return userRepository.findByUsername(username).isPresent();
+    }
+
     private UserDto convertToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
-        dto.setPhoneNumber(user.getPhoneNumber());
-        dto.setPhoneVerified(user.isPhoneVerified());
-        return dto;
+        UserDto userDto = new UserDto();
+        userDto.setId(user.getId());
+        userDto.setUsername(user.getUsername());
+        userDto.setEmail(user.getEmail());
+        userDto.setRole(user.getRole());
+        userDto.setPhoneNumber(user.getPhoneNumber());
+        userDto.setPhoneVerified(user.isPhoneVerified());
+        userDto.setSocialLogin(user.isSocialLogin());
+        return userDto;
     }
 }

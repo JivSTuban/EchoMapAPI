@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
@@ -23,12 +25,18 @@ public class MemoryController {
         this.memoryService = memoryService;
     }
 
+    @GetMapping
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<MemoryDto>> getAllMemories(Authentication authentication) {
+        return ResponseEntity.ok(memoryService.getAllMemories());
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<MemoryDto> createMemory(
             @Valid @RequestBody CreateMemoryRequest request,
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String username = userDetails.getUsername();
         return new ResponseEntity<>(memoryService.createMemory(request, username), HttpStatus.CREATED);
     }
 

@@ -35,6 +35,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/api/test/**").permitAll()
+                .requestMatchers("/api/auth/social/**").permitAll()
+                .requestMatchers("/api/auth/social/auth0/exchange").permitAll()
+                .requestMatchers("/api/auth/social/test").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/guest/**").permitAll()
                 .requestMatchers("/api/phone-auth/verify").authenticated()
@@ -43,7 +47,7 @@ public class SecurityConfig {
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(Customizer.withDefaults())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

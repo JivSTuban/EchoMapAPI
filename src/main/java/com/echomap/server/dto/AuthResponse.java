@@ -2,14 +2,18 @@ package com.echomap.server.dto;
 
 import com.echomap.server.model.Role;
 
+import java.time.LocalDateTime;
+
 public class AuthResponse {
     private String token;
     private String id;
     private String username;
     private String email;
+    private String profilePicture;
     private Role role;
     private boolean phoneVerified;
     private String phoneNumber;
+    private LocalDateTime createdAt;
 
     public AuthResponse() {
     }
@@ -30,6 +34,15 @@ public class AuthResponse {
         this.role = role;
         this.phoneNumber = phoneNumber;
         this.phoneVerified = phoneVerified;
+    }
+    
+    public AuthResponse(String id, String username, String email, String profilePicture, String token, LocalDateTime createdAt) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.profilePicture = profilePicture;
+        this.token = token;
+        this.createdAt = createdAt;
     }
 
     public String getToken() {
@@ -63,6 +76,14 @@ public class AuthResponse {
     public void setEmail(String email) {
         this.email = email;
     }
+    
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+    
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
 
     public Role getRole() {
         return role;
@@ -86,5 +107,13 @@ public class AuthResponse {
 
     public void setPhoneVerified(boolean phoneVerified) {
         this.phoneVerified = phoneVerified;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

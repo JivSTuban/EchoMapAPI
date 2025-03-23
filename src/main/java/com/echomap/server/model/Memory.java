@@ -34,7 +34,7 @@ public class Memory {
     @OneToMany(mappedBy = "memory", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
 
-    @Column(name = "location", nullable = false, columnDefinition = "POINT SRID 4326")
+    @Column(name = "location", nullable = false)
     private Point location;
 
     @Column(name = "created_at")

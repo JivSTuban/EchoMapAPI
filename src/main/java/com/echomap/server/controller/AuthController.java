@@ -6,7 +6,6 @@ import com.echomap.server.dto.UserDto;
 import com.echomap.server.model.Role;
 import com.echomap.server.model.User;
 import com.echomap.server.security.JwtTokenProvider;
-import com.echomap.server.service.FirebaseAuthService;
 import com.echomap.server.service.UserService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -30,17 +29,14 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
-    private final FirebaseAuthService firebaseAuthService;
 
     public AuthController(
             AuthenticationManager authenticationManager,
             JwtTokenProvider tokenProvider,
-            UserService userService,
-            FirebaseAuthService firebaseAuthService) {
+            UserService userService) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
         this.userService = userService;
-        this.firebaseAuthService = firebaseAuthService;
     }
 
     @GetMapping("/me")
@@ -57,6 +53,7 @@ public class AuthController {
             response.put("email", user.getEmail());
             response.put("phoneNumber", user.getPhoneNumber());
             response.put("role", user.getRole());
+            response.put("socialLogin", user.isSocialLogin());
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -88,11 +85,6 @@ public class AuthController {
             // Create the user in our system
             UserDto createdUser = userService.createUser(userDto);
             logger.info("User created successfully: {}", createdUser.getUsername());
-            
-            // Log the phone number if provided for debugging
-            if (userDto.getPhoneNumber() != null && !userDto.getPhoneNumber().isEmpty()) {
-                logger.info("Phone number verification will be handled by Firebase SDK in frontend");
-            }
 
             // Authenticate the user
             Authentication authentication = authenticationManager.authenticate(

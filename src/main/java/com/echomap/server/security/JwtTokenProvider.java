@@ -1,5 +1,6 @@
 package com.echomap.server.security;
 
+import com.echomap.server.model.User;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -35,6 +36,22 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .setSubject(authentication.getName())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(SignatureAlgorithm.HS512, getSigningKey())
+                .compact();
+    }
+    
+    public String generateToken(User user) {
+        logger.info("Generating JWT token for user: {}", user.getUsername());
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+
+        return Jwts.builder()
+                .setSubject(user.getUsername())
+                .claim("id", user.getId())
+                .claim("email", user.getEmail())
+                .claim("role", user.getRole().name())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, getSigningKey())

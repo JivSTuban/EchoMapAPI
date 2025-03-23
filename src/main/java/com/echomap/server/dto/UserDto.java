@@ -23,6 +23,8 @@ public class UserDto {
     private String phoneNumber;
 
     private boolean phoneVerified = false;
+    
+    private boolean socialLogin = false;
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
@@ -85,5 +87,13 @@ public class UserDto {
 
     public void setPhoneVerified(boolean phoneVerified) {
         this.phoneVerified = phoneVerified;
+    }
+
+    public boolean isSocialLogin() {
+        return socialLogin;
+    }
+
+    public void setSocialLogin(boolean socialLogin) {
+        this.socialLogin = socialLogin;
     }
 }

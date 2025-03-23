@@ -1,30 +1,31 @@
-CREATE DATABASE IF NOT EXISTS echomap;
-USE echomap;
+-- Remove CREATE DATABASE and USE commands for H2 compatibility
 
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(36) PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('USER', 'SUPER_USER', 'MODERATOR', 'ADMIN', 'GUEST') NOT NULL DEFAULT 'USER',
+    role VARCHAR(20) NOT NULL DEFAULT 'USER',
     account_non_expired BOOLEAN DEFAULT TRUE,
     account_non_locked BOOLEAN DEFAULT TRUE,
     credentials_non_expired BOOLEAN DEFAULT TRUE,
-    enabled BOOLEAN DEFAULT TRUE
+    enabled BOOLEAN DEFAULT TRUE,
+    CONSTRAINT uk_username UNIQUE (username),
+    CONSTRAINT uk_email UNIQUE (email)
 );
 
 CREATE TABLE IF NOT EXISTS memories (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
     media_url VARCHAR(255),
-    media_type ENUM('AUDIO', 'IMAGE', 'VIDEO') NOT NULL,
+    media_type VARCHAR(10) NOT NULL,
     cloudinary_public_id VARCHAR(255),
     description TEXT,
-    location POINT NOT NULL SRID 4326,
+    latitude DOUBLE NOT NULL,
+    longitude DOUBLE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     upvote_count INT DEFAULT 0,
-    visibility ENUM('PUBLIC', 'PRIVATE', 'FOLLOWERS') DEFAULT 'PUBLIC',
-    SPATIAL INDEX(location),
+    visibility VARCHAR(20) DEFAULT 'PUBLIC',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -37,17 +38,18 @@ CREATE TABLE IF NOT EXISTS flags (
 );
 
 -- Create spatial index for efficient nearby queries
-ALTER TABLE memories ADD SPATIAL INDEX(location);
+-- H2 doesn't support SPATIAL INDEX in this form
+-- ALTER TABLE memories ADD SPATIAL INDEX(location);
 
 -- Add index for memory visibility queries
-CREATE INDEX idx_memory_visibility ON memories(visibility);
+CREATE INDEX IF NOT EXISTS idx_memory_visibility ON memories(visibility);
 
 -- Add index for user lookups by username and email
-CREATE INDEX idx_user_username ON users(username);
-CREATE INDEX idx_user_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_user_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_user_email ON users(email);
 
 -- Add index for memory media type queries
-CREATE INDEX idx_memory_media_type ON memories(media_type);
+CREATE INDEX IF NOT EXISTS idx_memory_media_type ON memories(media_type);
 
 -- Add index for cloudinary public id
-CREATE INDEX idx_memory_cloudinary_id ON memories(cloudinary_public_id);
+CREATE INDEX IF NOT EXISTS idx_memory_cloudinary_id ON memories(cloudinary_public_id);

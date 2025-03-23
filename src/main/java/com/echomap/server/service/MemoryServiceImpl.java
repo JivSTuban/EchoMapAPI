@@ -18,7 +18,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class MemoryServiceImpl implements MemoryService {
+public class MemoryServiceImpl implements MemoryService{
+
+    @Override
+    public List<MemoryDto> getAllMemories() {
+        return null;
+    }
+
     private final MemoryRepository memoryRepository;
     private final UserRepository userRepository;
     private final DtoConverter dtoConverter;

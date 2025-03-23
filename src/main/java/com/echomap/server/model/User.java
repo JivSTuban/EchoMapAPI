@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -24,18 +25,30 @@ public class User implements UserDetails {
 
     @Column(unique = true)
     private String email;
+    
+    @Column
+    private String name;
+    
+    @Column(name = "profile_picture")
+    private String profilePicture;
 
     @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(name = "is_social_login")
     private boolean socialLogin = false;
+    
+    @Column(name = "social_provider")
+    private String socialProvider;
 
     @Column(unique = true)
     private String phoneNumber;
 
     @Column(name = "is_phone_verified")
     private boolean phoneVerified = false;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToMany
     @JoinTable(
@@ -81,6 +94,22 @@ public class User implements UserDetails {
     public void setEmail(String email) {
         this.email = email;
     }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+    
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
 
     public Role getRole() {
         return role;
@@ -97,6 +126,14 @@ public class User implements UserDetails {
     public void setSocialLogin(boolean socialLogin) {
         this.socialLogin = socialLogin;
     }
+    
+    public String getSocialProvider() {
+        return socialProvider;
+    }
+    
+    public void setSocialProvider(String socialProvider) {
+        this.socialProvider = socialProvider;
+    }
 
     public String getPhoneNumber() {
         return phoneNumber;
@@ -112,6 +149,14 @@ public class User implements UserDetails {
 
     public void setPhoneVerified(boolean phoneVerified) {
         this.phoneVerified = phoneVerified;
+    }
+    
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public Set<User> getFollowers() {
