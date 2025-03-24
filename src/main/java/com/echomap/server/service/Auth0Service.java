@@ -83,6 +83,9 @@ public class Auth0Service {
                 throw new IllegalArgumentException("Invalid user info: missing subject claim");
             }
             
+            // Log the full user info for debugging
+            logger.debug("Auth0 user info: {}", userInfo);
+            
             String email = (String) userInfo.get("email");
             if (email == null) {
                 logger.error("User info missing email claim");
@@ -92,7 +95,7 @@ public class Auth0Service {
             String name = (String) userInfo.get("name");
             String picture = (String) userInfo.get("picture");
             
-            logger.info("Successfully extracted user info: {}", email);
+            logger.info("Successfully extracted user info - ID: {}, Email: {}", userId, email);
             
             return new SocialUserInfo(
                 userId,

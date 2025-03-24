@@ -33,6 +33,7 @@ public class User implements UserDetails {
     private String profilePicture;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
     @Column(name = "is_social_login")

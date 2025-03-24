@@ -6,6 +6,7 @@ import com.echomap.server.model.User;
 import com.echomap.server.service.Auth0Service;
 import com.echomap.server.service.UserService;
 import com.echomap.server.security.JwtTokenProvider;
+import com.echomap.server.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +27,14 @@ public class SocialAuthController {
     private final Auth0Service auth0Service;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public SocialAuthController(Auth0Service auth0Service, JwtTokenProvider jwtTokenProvider, UserService userService) {
+    public SocialAuthController(Auth0Service auth0Service, JwtTokenProvider jwtTokenProvider, UserService userService, UserRepository userRepository) {
         this.auth0Service = auth0Service;
         this.jwtTokenProvider = jwtTokenProvider;
         this.userService = userService;
+        this.userRepository = userRepository;
         logger.info("SocialAuthController initialized");
     }
 
@@ -55,15 +58,17 @@ public class SocialAuthController {
             
             // Verify token and extract user info
             SocialUserInfo userInfo = auth0Service.verifyTokenAndGetUser(token);
-            logger.info("Auth0 user verified: {}", userInfo.getEmail());
+            logger.info("Auth0 user verified: {}, sub: {}", userInfo.getEmail(), userInfo.getUserId());
             
-            // Check if user exists, create if not
-            User user = userService.findByEmail(userInfo.getEmail())
+            // Use the Auth0 user ID (sub) as the username to ensure consistency
+            String auth0UserId = userInfo.getUserId();
+            
+            // Check if user exists by Auth0 ID, create if not
+            User user = userRepository.findByUsername(auth0UserId)
                 .orElseGet(() -> {
-                    String username = generateUniqueUsername(userInfo.getName(), userInfo.getEmail());
-                    logger.info("Creating new user with email: {}", userInfo.getEmail());
+                    logger.info("Creating new user with Auth0 ID: {}", auth0UserId);
                     return userService.createSocialUser(
-                        username,
+                        auth0UserId, // Use Auth0 user ID as username
                         userInfo.getEmail(),
                         userInfo.getName(),
                         userInfo.getProfilePicture(),
@@ -75,9 +80,10 @@ public class SocialAuthController {
             String jwt = jwtTokenProvider.generateToken(user);
             logger.info("JWT token generated successfully for user: {}", user.getEmail());
             
+            // Include the username (Auth0 ID) in the response for debugging
             AuthResponse response = new AuthResponse(
                 user.getId(),
-                user.getUsername(),
+                user.getUsername(), // This should be the Auth0 ID
                 user.getEmail(),
                 user.getProfilePicture(),
                 jwt,

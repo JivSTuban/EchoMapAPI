@@ -5,8 +5,10 @@ import com.echomap.server.model.User;
 import com.echomap.server.model.VisibilityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
@@ -17,11 +19,17 @@ public interface MemoryRepository extends JpaRepository<Memory, String> {
 
     @Query(value = """
         SELECT m.* FROM memories m
-        WHERE ST_Distance_Sphere(m.location, POINT(:lng, :lat)) <= :distance
-        AND (m.visibility = 'PUBLIC'
-            OR (m.visibility = 'FOLLOWERS' AND m.user_id IN
-                (SELECT followed_id FROM user_followers WHERE follower_id = :userId))
-            OR (m.user_id = :userId))
+        WHERE m.visibility = 'PUBLIC'
+        """, nativeQuery = true)
+    List<Memory> findAllPublicMemories();
+
+    @Query(value = """
+        SELECT m.* FROM memories m
+        WHERE (m.visibility = 'PUBLIC'
+           OR (m.visibility = 'FOLLOWERS' AND m.user_id IN
+               (SELECT followed_id FROM user_followers WHERE follower_id = :userId))
+           OR (m.user_id = :userId))
+        AND (:lat IS NOT NULL AND :lng IS NOT NULL AND :distance IS NOT NULL)
         """, nativeQuery = true)
     List<Memory> findNearbyMemories(
         @Param("lat") double lat,
@@ -32,12 +40,27 @@ public interface MemoryRepository extends JpaRepository<Memory, String> {
 
     @Query(value = """
         SELECT m.* FROM memories m
-        WHERE ST_Distance_Sphere(m.location, POINT(:lng, :lat)) <= :distance
-        AND m.visibility = 'PUBLIC'
+        WHERE m.visibility = 'PUBLIC'
+        AND :lat IS NOT NULL AND :lng IS NOT NULL AND :distance IS NOT NULL
+        ORDER BY m.created_at DESC
+        LIMIT 50
         """, nativeQuery = true)
     List<Memory> findNearbyPublicMemories(
         @Param("lat") double lat,
         @Param("lng") double lng,
         @Param("distance") double distance
+    );
+
+    @Modifying
+    @Transactional
+    @Query(value = """
+        UPDATE memories
+        SET location = ST_GeomFromText('POINT(' || :longitude || ' ' || :latitude || ')', 4326)
+        WHERE id = :id
+        """, nativeQuery = true)
+    void updateLocation(
+        @Param("id") String id,
+        @Param("latitude") double latitude,
+        @Param("longitude") double longitude
     );
 }

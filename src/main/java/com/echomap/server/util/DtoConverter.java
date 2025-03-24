@@ -43,8 +43,13 @@ public class DtoConverter {
 
     public Memory toEntity(MemoryDto dto) {
         Memory memory = new Memory();
+        memory.setMediaUrl(dto.getMediaUrl());
+        memory.setMediaType(dto.getMediaType());
+        memory.setDescription(dto.getDescription());
         memory.setAudioUrl(dto.getAudioUrl());
         memory.setVisibility(dto.getVisibility());
+        memory.setLatitude(dto.getLatitude());
+        memory.setLongitude(dto.getLongitude());
 
         // Convert lat/lng to Point
         Point point = geometryFactory.createPoint(
@@ -60,6 +65,9 @@ public class DtoConverter {
         dto.setId(memory.getId());
         dto.setUserId(memory.getUser().getId());
         dto.setUsername(memory.getUser().getUsername());
+        dto.setMediaUrl(memory.getMediaUrl());
+        dto.setMediaType(memory.getMediaType());
+        dto.setDescription(memory.getDescription());
         dto.setAudioUrl(memory.getAudioUrl());
         dto.setCreatedAt(memory.getCreatedAt());
         dto.setUpvoteCount(memory.getUpvoteCount());

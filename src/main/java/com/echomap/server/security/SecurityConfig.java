@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/social/test").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/guest/**").permitAll()
+                .requestMatchers("/api/memories/nearby/public").permitAll()
                 .requestMatchers("/api/phone-auth/verify").authenticated()
                 .requestMatchers("/api/phone-auth/status").authenticated()
                 .anyRequest().authenticated()

@@ -3,7 +3,10 @@ package com.echomap.server.controller;
 import com.echomap.server.dto.CreateMemoryRequest;
 import com.echomap.server.dto.MemoryDto;
 import com.echomap.server.service.MemoryService;
+import com.echomap.server.service.UserService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,15 +17,20 @@ import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/memories")
 @CrossOrigin(origins = "*")
 public class MemoryController {
     private final MemoryService memoryService;
+    private final UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(MemoryController.class);
 
-    public MemoryController(MemoryService memoryService) {
+    public MemoryController(MemoryService memoryService, UserService userService) {
         this.memoryService = memoryService;
+        this.userService = userService;
     }
 
     @GetMapping
@@ -37,7 +45,15 @@ public class MemoryController {
             @Valid @RequestBody CreateMemoryRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         String username = userDetails.getUsername();
-        return new ResponseEntity<>(memoryService.createMemory(request, username), HttpStatus.CREATED);
+        logger.info("Creating memory for user: {}", username);
+        
+        try {
+            MemoryDto createdMemory = memoryService.createMemory(request, username);
+            return new ResponseEntity<>(createdMemory, HttpStatus.CREATED);
+        } catch (Exception e) {
+            logger.error("Error creating memory for user: {}", username, e);
+            throw e;
+        }
     }
 
     @GetMapping("/{id}")
@@ -58,10 +74,59 @@ public class MemoryController {
 
     @GetMapping("/nearby/public")
     public ResponseEntity<List<MemoryDto>> getNearbyPublicMemories(
-            @RequestParam double latitude,
-            @RequestParam double longitude,
-            @RequestParam(defaultValue = "10") double radius) {
-        return ResponseEntity.ok(memoryService.getNearbyPublicMemories(latitude, longitude, radius));
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam(defaultValue = "1000") double radius) {
+        try {
+            logger.info("Fetching nearby public memories at lat={}, lng={}, radius={}", lat, lng, radius);
+            List<MemoryDto> memories = memoryService.getNearbyPublicMemories(lat, lng, radius);
+            
+            // Filter memories manually by distance
+            List<MemoryDto> filteredMemories = memories.stream()
+                .filter(memory -> {
+                    if (memory.getLatitude() == null || memory.getLongitude() == null) {
+                        return false;
+                    }
+                    
+                    // Calculate distance using Haversine formula
+                    double distance = calculateDistance(
+                        lat, lng,
+                        memory.getLatitude(), memory.getLongitude()
+                    );
+                    
+                    // Add distance to memory object for UI display
+                    memory.setDistanceInMeters(distance * 1000);
+                    
+                    // Keep only memories within radius (in km)
+                    return distance <= radius;
+                })
+                .collect(Collectors.toList());
+            
+            logger.info("Found {} memories within {}km", filteredMemories.size(), radius);
+            return ResponseEntity.ok(filteredMemories);
+        } catch (Exception e) {
+            logger.error("Error fetching nearby public memories: {}", e.getMessage(), e);
+            // Return empty list instead of error response
+            return ResponseEntity.ok(List.of());
+        }
+    }
+    
+    // Calculate distance between two coordinates in km using Haversine formula
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Earth's radius in km
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                 * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    @GetMapping("/public/all")
+    public ResponseEntity<List<MemoryDto>> getAllPublicMemories() {
+        List<MemoryDto> memories = memoryService.getAllPublicMemories();
+        return ResponseEntity.ok(memories);
     }
 
     @PutMapping("/{id}")
@@ -81,8 +146,8 @@ public class MemoryController {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleException(Exception e) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", e.getMessage()));
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
