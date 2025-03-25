@@ -165,13 +165,30 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
 
-        if (userDto.getUsername() != null) {
+        // Only update username for non-social login accounts
+        if (userDto.getUsername() != null && !user.isSocialLogin()) {
             user.setUsername(userDto.getUsername());
         }
-        if (userDto.getEmail() != null) {
+        
+        // Only update email for non-social login accounts
+        if (userDto.getEmail() != null && !user.isSocialLogin()) {
             user.setEmail(userDto.getEmail());
         }
-        if (userDto.getPassword() != null) {
+        
+        // Update name for all users
+        if (userDto.getName() != null) {
+            user.setName(userDto.getName());
+            logger.info("Updated name to: {}", userDto.getName());
+        }
+        
+        // Update phone number for all users
+        if (userDto.getPhoneNumber() != null) {
+            user.setPhoneNumber(userDto.getPhoneNumber());
+            logger.info("Updated phone number to: {}", userDto.getPhoneNumber());
+        }
+        
+        // Only update password for non-social login accounts
+        if (userDto.getPassword() != null && !user.isSocialLogin()) {
             user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         }
 
@@ -225,6 +242,7 @@ public class UserService implements UserDetailsService {
         userDto.setId(user.getId());
         userDto.setUsername(user.getUsername());
         userDto.setEmail(user.getEmail());
+        userDto.setName(user.getName());
         userDto.setRole(user.getRole());
         userDto.setPhoneNumber(user.getPhoneNumber());
         userDto.setPhoneVerified(user.isPhoneVerified());

@@ -51,6 +51,7 @@ public class AuthController {
             response.put("id", user.getId());
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
+            response.put("name", user.getName());
             response.put("phoneNumber", user.getPhoneNumber());
             response.put("role", user.getRole());
             response.put("socialLogin", user.isSocialLogin());
@@ -75,7 +76,7 @@ public class AuthController {
         String jwt = tokenProvider.generateToken(authentication);
         User user = (User) authentication.getPrincipal();
 
-        return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getRole()));
+        return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getName(), user.getRole()));
     }
 
     @PostMapping("/register")
@@ -102,6 +103,7 @@ public class AuthController {
                 createdUser.getId(),
                 createdUser.getUsername(),
                 createdUser.getEmail(),
+                createdUser.getName(),
                 Role.USER
             ));
 

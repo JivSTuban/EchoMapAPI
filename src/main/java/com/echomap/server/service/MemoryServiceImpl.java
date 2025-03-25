@@ -58,6 +58,7 @@ public class MemoryServiceImpl implements MemoryService{
         memory.setMediaUrl(request.getMediaUrl());
         memory.setCloudinaryPublicId(request.getCloudinaryPublicId());
         memory.setMediaType(request.getMediaType());
+        memory.setTitle(request.getTitle());
         memory.setDescription(request.getDescription());
         
         // Set both explicit lat/long fields and the Point object
@@ -125,6 +126,7 @@ public class MemoryServiceImpl implements MemoryService{
 
         memory.setVisibility(memoryDto.getVisibility());
         memory.setMediaUrl(memoryDto.getMediaUrl());
+        memory.setTitle(memoryDto.getTitle());
         memory.setDescription(memoryDto.getDescription());
         if (memoryDto.getLatitude() != null && memoryDto.getLongitude() != null) {
             // Update both explicit fields and the Point

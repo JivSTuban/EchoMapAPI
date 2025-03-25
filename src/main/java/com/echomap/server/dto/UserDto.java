@@ -14,6 +14,9 @@ public class UserDto {
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
+    @Size(max = 100, message = "Name must not exceed 100 characters")
+    private String name;
+
     @NotBlank(message = "Email is required")
     @Email(message = "Please provide a valid email address")
     @Size(max = 100, message = "Email must not exceed 100 characters")
@@ -47,6 +50,14 @@ public class UserDto {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getEmail() {

@@ -7,6 +7,7 @@ public class CreateMemoryRequest {
     private String mediaUrl;
     private String cloudinaryPublicId;
     private MediaType mediaType;
+    private String title;
     private String description;
     private Double latitude;
     private Double longitude;
@@ -34,6 +35,14 @@ public class CreateMemoryRequest {
 
     public void setMediaType(MediaType mediaType) {
         this.mediaType = mediaType;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getDescription() {

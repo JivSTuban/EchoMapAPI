@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS memories (
     media_url VARCHAR(255),
     media_type VARCHAR(10) NOT NULL,
     cloudinary_public_id VARCHAR(255),
+    title VARCHAR(255),
     description TEXT,
     latitude DOUBLE NOT NULL,
     longitude DOUBLE NOT NULL,

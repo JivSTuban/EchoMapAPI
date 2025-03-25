@@ -11,8 +11,10 @@ public class MemoryDto {
     private String id;
     private String userId;
     private String username;
+    private String name;
     private String mediaUrl;
     private MediaType mediaType;
+    private String title;
     private String description;
     private List<CommentDto> comments;
 
@@ -57,6 +59,14 @@ public class MemoryDto {
         this.username = username;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getMediaUrl() {
         return mediaUrl;
     }
@@ -71,6 +81,14 @@ public class MemoryDto {
 
     public void setMediaType(MediaType mediaType) {
         this.mediaType = mediaType;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getDescription() {

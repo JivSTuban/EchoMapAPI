@@ -9,6 +9,7 @@ public class AuthResponse {
     private String id;
     private String username;
     private String email;
+    private String name;
     private String profilePicture;
     private Role role;
     private boolean phoneVerified;
@@ -26,11 +27,31 @@ public class AuthResponse {
         this.role = role;
     }
 
+    public AuthResponse(String token, String id, String username, String email, String name, Role role) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.name = name;
+        this.role = role;
+    }
+
     public AuthResponse(String token, String id, String username, String email, Role role, String phoneNumber, boolean phoneVerified) {
         this.token = token;
         this.id = id;
         this.username = username;
         this.email = email;
+        this.role = role;
+        this.phoneNumber = phoneNumber;
+        this.phoneVerified = phoneVerified;
+    }
+    
+    public AuthResponse(String token, String id, String username, String email, String name, Role role, String phoneNumber, boolean phoneVerified) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.name = name;
         this.role = role;
         this.phoneNumber = phoneNumber;
         this.phoneVerified = phoneVerified;
@@ -67,6 +88,14 @@ public class AuthResponse {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getEmail() {

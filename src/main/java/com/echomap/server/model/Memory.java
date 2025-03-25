@@ -31,6 +31,9 @@ public class Memory {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "title")
+    private String title;
+
     @OneToMany(mappedBy = "memory", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
 
@@ -122,6 +125,14 @@ public class Memory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public Set<Comment> getComments() {

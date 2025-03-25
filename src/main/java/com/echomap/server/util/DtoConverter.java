@@ -45,6 +45,7 @@ public class DtoConverter {
         Memory memory = new Memory();
         memory.setMediaUrl(dto.getMediaUrl());
         memory.setMediaType(dto.getMediaType());
+        memory.setTitle(dto.getTitle());
         memory.setDescription(dto.getDescription());
         memory.setAudioUrl(dto.getAudioUrl());
         memory.setVisibility(dto.getVisibility());
@@ -65,8 +66,10 @@ public class DtoConverter {
         dto.setId(memory.getId());
         dto.setUserId(memory.getUser().getId());
         dto.setUsername(memory.getUser().getUsername());
+        dto.setName(memory.getUser().getName());
         dto.setMediaUrl(memory.getMediaUrl());
         dto.setMediaType(memory.getMediaType());
+        dto.setTitle(memory.getTitle());
         dto.setDescription(memory.getDescription());
         dto.setAudioUrl(memory.getAudioUrl());
         dto.setCreatedAt(memory.getCreatedAt());

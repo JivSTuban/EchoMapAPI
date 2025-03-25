@@ -35,12 +35,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromJWT(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                logger.debug("Processing JWT for username: {}", username);
+                
+                try {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    
+                    // If we get here, user was found
+                    logger.debug("User found and authenticated: {}", username);
+                    
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (Exception ex) {
+                    logger.error("Error loading user by username: {}", username, ex);
+                    // Don't set authentication - will result in 403
+                }
+            } else if (StringUtils.hasText(jwt)) {
+                logger.warn("Invalid JWT token received");
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
