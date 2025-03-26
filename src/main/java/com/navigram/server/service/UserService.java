@@ -79,10 +79,13 @@ public class UserService implements UserDetailsService {
         if (existingUser.isPresent()) {
             logger.info("Existing user found: {}", existingUser.get().getUsername());
             User user = existingUser.get();
+            // Only save if socialLogin status needs to be updated
             if (!user.isSocialLogin()) {
                 user.setSocialLogin(true);
                 userRepository.save(user);
                 logger.info("Updated existing user to socialLogin: {}", user.getUsername());
+            } else {
+                logger.info("User already has socialLogin enabled, no update needed: {}", user.getUsername());
             }
             return convertToDto(user);
         }

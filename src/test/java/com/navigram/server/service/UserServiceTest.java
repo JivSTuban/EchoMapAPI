@@ -39,6 +39,7 @@ class UserServiceTest {
         socialUser.setUsername("socialUser");
         socialUser.setEmail("social@example.com");
         socialUser.setRole(Role.USER);
+        socialUser.setSocialLogin(true);
 
         UserDto socialUserDto = new UserDto();
         socialUserDto.setUsername("socialUser");
