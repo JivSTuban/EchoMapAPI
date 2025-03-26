@@ -1,6 +1,7 @@
-# EchoMap Server
+# naviGram Server
 
-EchoMap is an anonymous, location-based memory sharing platform that allows users to leave voice notes, stories, or art tied to GPS coordinates, creating an invisible layer of collective memory. Users can create and manage their accounts, upload and share audio memories tied to specific locations, browse nearby memories with customizable radius, set privacy settings for their memories, flag inappropriate content, and perform spatial queries for efficient nearby memory retrieval.
+## Overview
+naviGram is an anonymous, location-based memory sharing platform that allows users to leave voice notes, stories, or art tied to GPS coordinates, creating an invisible layer of collective memory. Users can create and manage their accounts, upload and share audio memories tied to specific locations, browse nearby memories with customizable radius, set privacy settings for their memories, flag inappropriate content, and perform spatial queries for efficient nearby memory retrieval.
 
 ## Features
 

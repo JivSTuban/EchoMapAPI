@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS memories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     upvote_count INT DEFAULT 0,
     visibility VARCHAR(20) DEFAULT 'PUBLIC',
+    is_flagged BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

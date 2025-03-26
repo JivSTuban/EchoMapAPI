@@ -8,10 +8,10 @@
         <version>3.2.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.echomap</groupId>
+    <groupId>com.navigram</groupId>
     <artifactId>server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>EchoMap Server</name>
+    <name>naviGram Server</name>
     <description>Location-Based Memory Sharing Platform</description>
 
     <properties>
