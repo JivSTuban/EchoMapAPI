@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: echomap-server
+    runtime: docker
+    plan: free
+    repo: https://github.com/YOUR_USERNAME/EchoMap.git # Replace with your GitHub repo
+    branch: main
+    buildCommand: cd EchoMapServer && ./mvnw package -DskipTests
+    startCommand: cd EchoMapServer && java -jar -Dspring.profiles.active=prod target/*.jar
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: PORT
+        value: 8080
+      - key: JDBC_DATABASE_URL
+        fromDatabase:
+          name: echomap-db
+          property: connectionString
+          replacements:
+            - from: postgres://
+              to: jdbc:postgresql://
+      - key: JDBC_DATABASE_USERNAME
+        fromDatabase:
+          name: echomap-db
+          property: user
+      - key: JDBC_DATABASE_PASSWORD
+        fromDatabase:
+          name: echomap-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://echomap-web.onrender.com,http://localhost:5173
+
+databases:
+  - name: echomap-db
+    plan: free
+    databaseName: echomap 
