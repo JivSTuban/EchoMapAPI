@@ -3,11 +3,13 @@ services:
     name: echomap-server
     runtime: docker
     plan: free
-    repo: https://github.com/YOUR_USERNAME/EchoMap.git # Replace with your GitHub repo
+    repo: https://github.com/JivSTuban/EchoMapAPI.git
     branch: main
     buildCommand: cd EchoMapServer && ./mvnw package -DskipTests
-    startCommand: cd EchoMapServer && java -jar -Dspring.profiles.active=prod target/*.jar
+    startCommand: cd EchoMapServer && java -jar -Dspring.profiles.active=prod -Xmx512m -Xms256m target/*.jar
     healthCheckPath: /actuator/health
+    healthCheckTimeout: 300
+    autoDeploy: true
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
@@ -31,9 +33,16 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
-        value: https://echomap-web.onrender.com,http://localhost:5173
+        value: https://echo-map-frontend.vercel.app,http://localhost:5173
+      - key: AUTH0_DOMAIN
+        value: dev-h8w5sjngzdjcyzsm.jp.auth0.com
+      - key: AUTH0_CLIENT_ID
+        value: cNk9rYMClfNS84GDSHIJYXi3J8wacU2R
+      - key: AUTH0_AUDIENCE
+        value: https://echomap-server.onrender.com/api
 
 databases:
   - name: echomap-db
     plan: free
-    databaseName: echomap 
+    databaseName: echomap
+    ipAllowList: []  # Only allow connections from services within Render 
