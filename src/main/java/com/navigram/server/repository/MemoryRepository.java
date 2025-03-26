@@ -56,7 +56,7 @@ public interface MemoryRepository extends JpaRepository<Memory, String> {
     @Transactional
     @Query(value = """
         UPDATE memories
-        SET location = ST_GeomFromText('POINT(' || :longitude || ' ' || :latitude || ')', 4326)
+        SET location = ST_GeomFromText(CONCAT('POINT(', :longitude, ' ', :latitude, ')'), 4326)
         WHERE id = :id
         """, nativeQuery = true)
     void updateLocation(

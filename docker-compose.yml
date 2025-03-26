@@ -1,40 +1,50 @@
+version: '3.8'
+
 services:
   backend:
     build: .
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/echomap?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/echomap?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create
     depends_on:
-      - mysql-db
+      mysql:
+        condition: service_healthy
     networks:
       - echomap-network
     volumes:
       - ./src:/app/src
       - ./target:/app/target
-    command: sh -c '/wait-for-it.sh mysql-db:3306 -- java -jar app.jar'
+    command: sh -c '/wait-for-it.sh mysql:3306 -t 60 -- java -jar app.jar'
 
-  mysql-db:
+  mysql:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: echomapserver-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: echomap
+      MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    command: --default-authentication-plugin=mysql_native_password
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - echomap-network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
 networks:
   echomap-network:
     driver: bridge
 
 volumes:
-  mysql-data:
-    driver: local
+  mysql_data:

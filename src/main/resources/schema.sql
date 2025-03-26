@@ -1,4 +1,4 @@
--- Remove CREATE DATABASE and USE commands for H2 compatibility
+-- PostgreSQL schema
 
 CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(36) PRIMARY KEY,
@@ -22,8 +22,9 @@ CREATE TABLE IF NOT EXISTS memories (
     cloudinary_public_id VARCHAR(255),
     title VARCHAR(255),
     description TEXT,
-    latitude DOUBLE NOT NULL,
-    longitude DOUBLE NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    location GEOGRAPHY(POINT, 4326),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     upvote_count INT DEFAULT 0,
     visibility VARCHAR(20) DEFAULT 'PUBLIC',
@@ -40,8 +41,7 @@ CREATE TABLE IF NOT EXISTS flags (
 );
 
 -- Create spatial index for efficient nearby queries
--- H2 doesn't support SPATIAL INDEX in this form
--- ALTER TABLE memories ADD SPATIAL INDEX(location);
+CREATE INDEX IF NOT EXISTS idx_memories_location ON memories USING GIST (location);
 
 -- Add index for memory visibility queries
 CREATE INDEX IF NOT EXISTS idx_memory_visibility ON memories(visibility);

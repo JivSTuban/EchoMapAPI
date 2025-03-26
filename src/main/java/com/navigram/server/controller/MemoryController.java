@@ -144,8 +144,23 @@ public class MemoryController {
         return ResponseEntity.ok(Map.of("message", "Memory deleted successfully"));
     }
 
+    @GetMapping("/web/all")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<MemoryDto>> getAllMemoriesForWeb() {
+        try {
+            logger.info("Fetching all memories for web version");
+            List<MemoryDto> memories = memoryService.getAllMemories();
+            logger.info("Found {} memories", memories.size());
+            return ResponseEntity.ok(memories);
+        } catch (Exception e) {
+            logger.error("Error fetching all memories for web: {}", e.getMessage(), e);
+            throw e; // Let the exception handler handle it
+        }
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleException(Exception e) {
+        logger.error("Handling exception in controller: {}", e.getMessage(), e);
         Map<String, String> errorResponse = new HashMap<>();
         errorResponse.put("error", e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);

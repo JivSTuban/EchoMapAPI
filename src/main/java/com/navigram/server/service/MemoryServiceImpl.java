@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -45,8 +46,30 @@ public class MemoryServiceImpl implements MemoryService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<MemoryDto> getAllMemories() {
-        return null;
+        try {
+            logger.info("Retrieving all memories from database");
+            List<Memory> memories = memoryRepository.findAll();
+            logger.info("Successfully retrieved {} memories from database", memories.size());
+            
+            List<MemoryDto> memoryDtos = new ArrayList<>();
+            for (Memory memory : memories) {
+                try {
+                    MemoryDto dto = dtoConverter.toDto(memory);
+                    memoryDtos.add(dto);
+                } catch (Exception e) {
+                    logger.error("Error converting memory with ID {} to DTO: {}", memory.getId(), e.getMessage(), e);
+                    // Continue with next memory instead of failing the entire request
+                }
+            }
+            
+            logger.info("Successfully converted {} memories to DTOs", memoryDtos.size());
+            return memoryDtos;
+        } catch (Exception e) {
+            logger.error("Error fetching all memories: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve memories: " + e.getMessage(), e);
+        }
     }
 
     @Override

@@ -69,11 +69,20 @@ public class DtoConverter {
     }
 
     public MemoryDto toDto(Memory memory) {
+        if (memory == null) {
+            return null;
+        }
+
         MemoryDto dto = new MemoryDto();
         dto.setId(memory.getId());
-        dto.setUserId(memory.getUser().getId());
-        dto.setUsername(memory.getUser().getUsername());
-        dto.setName(memory.getUser().getName());
+        
+        // Handle potential null user
+        if (memory.getUser() != null) {
+            dto.setUserId(memory.getUser().getId());
+            dto.setUsername(memory.getUser().getUsername());
+            dto.setName(memory.getUser().getName());
+        }
+        
         dto.setMediaUrl(memory.getMediaUrl());
         dto.setMediaType(memory.getMediaType());
         dto.setTitle(memory.getTitle());
@@ -83,10 +92,16 @@ public class DtoConverter {
         dto.setUpvoteCount(memory.getUpvoteCount());
         dto.setVisibility(memory.getVisibility());
 
-        // Convert Point to lat/lng
+        // Convert Point to lat/lng safely
         Point point = memory.getLocation();
-        dto.setLatitude(point.getY());  // Y coordinate is latitude
-        dto.setLongitude(point.getX()); // X coordinate is longitude
+        if (point != null) {
+            dto.setLatitude(point.getY());  // Y coordinate is latitude
+            dto.setLongitude(point.getX()); // X coordinate is longitude
+        } else {
+            // Fallback to the direct latitude/longitude fields
+            dto.setLatitude(memory.getLatitude());
+            dto.setLongitude(memory.getLongitude());
+        }
 
         // Set flag reason if memory is flagged
         if (memory.isFlagged() && memory.getFlags() != null && !memory.getFlags().isEmpty()) {
