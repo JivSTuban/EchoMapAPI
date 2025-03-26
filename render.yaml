@@ -6,8 +6,8 @@ services:
     repo: https://github.com/JivSTuban/EchoMapAPI.git
     branch: main
     buildCommand: cd EchoMapServer && ./mvnw package -DskipTests
-    startCommand: cd EchoMapServer && java -jar -Dspring.profiles.active=prod -Xmx512m -Xms256m target/*.jar
     healthCheckPath: /actuator/health
+    healthCheckTimeout: 300
     autoDeploy: true
     envVars:
       - key: SPRING_PROFILES_ACTIVE
@@ -39,6 +39,8 @@ services:
         value: cNk9rYMClfNS84GDSHIJYXi3J8wacU2R
       - key: AUTH0_AUDIENCE
         value: https://echomap-server.onrender.com/api
+      - key: JAVA_OPTS
+        value: "-Xmx512m -Xms256m -Dspring.profiles.active=prod"
 
 databases:
   - name: echomap-db
