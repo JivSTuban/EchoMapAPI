@@ -21,7 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth/social")
-@CrossOrigin(origins = {"http://localhost:5173"}, allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
+@CrossOrigin(origins = {"http://localhost:5173", "https://echo-map-frontend.vercel.app"}, allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST})
 public class SocialAuthController {
     private static final Logger logger = LoggerFactory.getLogger(SocialAuthController.class);
 
